@@ -8,6 +8,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * Created by laststnd on 7/4/17.
@@ -19,13 +20,58 @@ public class WifiService {
     private WifiManager wifiManager;
     private WifiConfiguration netConfig;
     private Object syncToken;
+    private int netId;
+    private static final String ssid = "LifeHacker"; // Hotspot SSID
+    private static final String passkey = "getlost@123"; // Hotspot Password
 
     // constructor
     WifiService(Activity mActivity){
         // ensure that the hotspot is stopped before Running the app
         this.activity = mActivity;
         syncToken = new Object();
+        netConfig = new WifiConfiguration();
+
         wifiManager = (WifiManager) activity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        while( !wifiManager.isWifiEnabled() ){
+            // turn on the wifi if not
+            wifiManager.setWifiEnabled(true);
+        }
+        wifiManager.disconnect();
+
+        setUpWifiClient();
+    }
+
+    // connect to wifiHotspot
+    private void setUpWifiClient(){
+
+        WifiConfiguration conf = new WifiConfiguration();
+        conf.SSID = "\"" + ssid + "\"";
+        conf.preSharedKey = "\""+ passkey +"\"";
+
+        wifiManager.addNetwork(conf);
+
+        List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
+        for( WifiConfiguration i : list ) {
+            if(i.SSID != null && i.SSID.equals("\""+ssid+"\"")) {
+                netId = i.networkId;
+                Log.d(MainActivity.WIFI_TAG, "Found Configured Wifi");
+                break;
+            }
+        }
+    }
+    public void connect(){
+        // clients connects to a wifi network
+        Log.d(MainActivity.WIFI_TAG, "Connecting...");
+        wifiManager.disconnect();
+        wifiManager.enableNetwork(netId, true);
+        wifiManager.reconnect();
+        Log.d(MainActivity.WIFI_TAG, "Connected");
+    }
+
+    public void disconnect(){
+        // clients disconnects from a wifi network
+        wifiManager.disconnect();
+        Log.d(MainActivity.WIFI_TAG, "Disconnected");
     }
 
     // enable the wifiHotspot
@@ -36,14 +82,12 @@ public class WifiService {
             wifiManager.setWifiEnabled(false);
         }
 
-        netConfig = new WifiConfiguration();
-
-        netConfig.SSID = "i_am_smart_bin";
+        netConfig.SSID = ssid;
         netConfig.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
         netConfig.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
         netConfig.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
         netConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-        netConfig.preSharedKey = "hastalavista";
+        netConfig.preSharedKey = passkey;
 
         try{
             Method setWifiApMethod = wifiManager.getClass().getMethod("setWifiApEnabled", WifiConfiguration.class, boolean.class);

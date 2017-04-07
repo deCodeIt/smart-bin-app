@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 clientStart.setEnabled(false);
                 clientStop.setEnabled(true);
+                wifiService.connect();
             }
         });
 
@@ -78,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 clientStart.setEnabled(true);
                 clientStop.setEnabled(false);
+                wifiService.disconnect();
             }
         });
 
