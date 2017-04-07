@@ -1,7 +1,10 @@
 package io.github.decodeit.smartbin;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.util.Log;
@@ -21,8 +24,11 @@ public class WifiService {
     private WifiConfiguration netConfig;
     private Object syncToken;
     private int netId;
+    private int currentRSSI;
     private static final String ssid = "LifeHacker"; // Hotspot SSID
     private static final String passkey = "getlost@123"; // Hotspot Password
+    private boolean isCollectingSamples = false;
+    private static final float SAMPLES_PER_SECOND = 2.0f;
 
     // constructor
     WifiService(Activity mActivity){
@@ -40,6 +46,20 @@ public class WifiService {
 
         setUpWifiClient();
     }
+
+    private Runnable getWifiSignal = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                if (isCollectingSamples) {
+                    Log.d(MainActivity.WIFI_TAG, currentRSSI + "dBm");
+                }
+                Thread.sleep(Math.round(1000.0f / SAMPLES_PER_SECOND));
+            } catch (Exception e) {
+                Log.e(this.getClass().toString(), "", e);
+            }
+        }
+    };
 
     // connect to wifiHotspot
     private void setUpWifiClient(){
@@ -59,6 +79,30 @@ public class WifiService {
             }
         }
     }
+
+    private void startCollectingSamples(){
+        isCollectingSamples = true;
+    }
+
+    private void stopCollectingSamples(){
+        isCollectingSamples = false;
+    }
+
+    private BroadcastReceiver rssiChangeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            currentRSSI = intent.getIntExtra(WifiManager.EXTRA_NEW_RSSI,0);
+        }
+    };
+
+    public void register(){
+        activity.registerReceiver(rssiChangeReceiver, new IntentFilter(WifiManager.RSSI_CHANGED_ACTION));
+    }
+
+    public void deRegister(){
+        activity.unregisterReceiver(rssiChangeReceiver);
+    }
+
     public void connect(){
         // clients connects to a wifi network
         Log.d(MainActivity.WIFI_TAG, "Connecting...");
@@ -66,12 +110,14 @@ public class WifiService {
         wifiManager.enableNetwork(netId, true);
         wifiManager.reconnect();
         Log.d(MainActivity.WIFI_TAG, "Connected");
+        startCollectingSamples(); // collect wifi Signal strength samples
     }
 
     public void disconnect(){
         // clients disconnects from a wifi network
         wifiManager.disconnect();
         Log.d(MainActivity.WIFI_TAG, "Disconnected");
+        stopCollectingSamples(); // stop collecting wifi signal strength samples
     }
 
     // enable the wifiHotspot

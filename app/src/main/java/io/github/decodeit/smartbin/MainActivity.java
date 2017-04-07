@@ -21,6 +21,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        wifiService.register(); // resumes updating wifi signal strength
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        wifiService.deRegister(); // stops updating wifi signal strength
+    }
+
+    @Override
     protected void onDestroy() {
         wifiService.disableHotspot();
         super.onDestroy();
