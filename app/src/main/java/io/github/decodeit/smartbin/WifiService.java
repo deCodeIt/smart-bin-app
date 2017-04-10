@@ -45,12 +45,16 @@ public class WifiService {
         wifiManager.disconnect();
 
         setUpWifiClient();
+
+        Thread wifiSignalScanner = new Thread(getWifiSignal);
+        wifiSignalScanner.start();
     }
 
     private Runnable getWifiSignal = new Runnable() {
         @Override
         public void run() {
             try {
+                Log.d(MainActivity.WIFI_TAG,"getWifiSignal");
                 if (isCollectingSamples) {
                     Log.d(MainActivity.WIFI_TAG, currentRSSI + "dBm");
                 }
