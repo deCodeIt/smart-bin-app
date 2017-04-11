@@ -80,8 +80,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 clientStart.setEnabled(false);
-                clientStop.setEnabled(true);
                 wifiService.connect();
+                clientStop.setEnabled(true);
             }
         });
 
@@ -89,9 +89,9 @@ public class MainActivity extends AppCompatActivity {
         clientStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                clientStart.setEnabled(true);
                 clientStop.setEnabled(false);
                 wifiService.disconnect();
+                clientStart.setEnabled(true);
             }
         });
 
