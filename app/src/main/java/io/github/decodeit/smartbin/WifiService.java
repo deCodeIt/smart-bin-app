@@ -5,12 +5,18 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 import android.widget.Toast;
 
 import java.lang.reflect.Method;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteOrder;
 import java.util.List;
 
 /**
@@ -25,8 +31,8 @@ public class WifiService {
     private Object syncToken;
     private int netId;
     private int currentRSSI;
-    private static final String ssid = "LifeHacker"; // Hotspot SSID
-    private static final String passkey = "getlost@123"; // Hotspot Password
+    private static final String ssid = "i_am_smart_bin"; // Hotspot SSID
+    private static final String passkey = "iloveindia"; // Hotspot Password
     private boolean isCollectingSamples = false;
     private static final float SAMPLES_PER_SECOND = 2.0f;
 
@@ -99,12 +105,30 @@ public class WifiService {
         }
     };
 
+    private BroadcastReceiver isConnected = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ConnectivityManager conMan = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo netInfo = conMan.getActiveNetworkInfo();
+            if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && wifiManager!=null && wifiManager.getConnectionInfo().getSSID().equals("\""+ssid+"\"")) {
+                Log.d("WifiReceiver", "Have Wifi Connection");
+                getIpAddress();
+                getServerIpAddress();
+                runMessageClient();
+            }
+            else
+                Log.d("WifiReceiver", "Don't have Wifi Connection");
+        }
+    };
+
     public void register(){
         activity.registerReceiver(rssiChangeReceiver, new IntentFilter(WifiManager.RSSI_CHANGED_ACTION));
+        activity.registerReceiver(isConnected, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
     public void deRegister(){
         activity.unregisterReceiver(rssiChangeReceiver);
+        activity.unregisterReceiver(isConnected);
     }
 
     public void connect(){
@@ -114,6 +138,7 @@ public class WifiService {
         wifiManager.enableNetwork(netId, true);
         wifiManager.reconnect();
         Log.d(MainActivity.WIFI_TAG, "Connected");
+//        getIpAddress();
         startCollectingSamples(); // collect wifi Signal strength samples
     }
 
@@ -153,6 +178,7 @@ public class WifiService {
 //            }
             Log.d("CLIENT", "\nSSID:"+netConfig.SSID+"\nPassword:"+netConfig.preSharedKey+"\n");
             makeToast("Wifi Hotspot Enabled", Toast.LENGTH_SHORT);
+            runMessageServer();
 //            Toast.makeText(activity,"Wifi Hotspot Enabled",Toast.LENGTH_SHORT).show();
 
 
@@ -173,6 +199,7 @@ public class WifiService {
 //            }
             Log.d(MainActivity.WIFI_TAG,"Wifi Disabled");
             makeToast("Wifi Hotspot Disabled", Toast.LENGTH_SHORT);
+
 //            Toast.makeText(activity,"Wifi Hotspot Disabled",Toast.LENGTH_SHORT).show();
 
         } catch (Exception e) {
@@ -189,8 +216,87 @@ public class WifiService {
         });
     }
 
+    public String getIpAddress(){
+        // returns the ip address of client
+        String ipAddressString;
+        if(wifiManager!=null) {
+            int ipAddress = wifiManager.getConnectionInfo().getIpAddress();
+            // Convert little-endian to big-endianif needed
+            if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
+                ipAddress = Integer.reverseBytes(ipAddress);
+            }
+
+            Log.d(MainActivity.WIFI_TAG,"IP int: "+ipAddress);
+
+            byte[] ipByteArray = BigInteger.valueOf(ipAddress).toByteArray();
+
+            try {
+                ipAddressString = InetAddress.getByAddress(ipByteArray).getHostAddress();
+            } catch (UnknownHostException ex) {
+                Log.e("WIFIIP", "Unable to get host address.");
+                ipAddressString = null;
+            }
+        } else {
+            ipAddressString = null;
+        }
+        Log.d(MainActivity.WIFI_TAG, "Ip address: " + ipAddressString);
+        return ipAddressString;
+    }
+
+    public String getServerIpAddress(){
+        // returns the ip address of connected wifi network
+        String ipAddressString;
+        if(wifiManager!=null) {
+            int ipAddress = wifiManager.getDhcpInfo().serverAddress;
+            // Convert little-endian to big-endianif needed
+            if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
+                ipAddress = Integer.reverseBytes(ipAddress);
+            }
+
+            Log.d(MainActivity.WIFI_TAG,"IP server int: "+ipAddress);
+
+            byte[] ipByteArray = BigInteger.valueOf(ipAddress).toByteArray();
+
+            try {
+                ipAddressString = InetAddress.getByAddress(ipByteArray).getHostAddress();
+            } catch (UnknownHostException ex) {
+                Log.e("WIFIIP", "Unable to get Server address.");
+                ipAddressString = null;
+            }
+        } else {
+            ipAddressString = null;
+        }
+        Log.d(MainActivity.WIFI_TAG, "Server Ip address: " + ipAddressString);
+        return ipAddressString;
+    }
+
     public Object getToken(){
         return syncToken;
+    }
+
+    private void runMessageServer(){
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                MessageServer m = new MessageServer(activity);
+                m.setUp();
+            }
+        };
+        Thread rT = new Thread(r);
+        rT.start();
+    }
+
+    private void runMessageClient(){
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                MessageClient m = new MessageClient(activity,getServerIpAddress());
+                m.createMessage(123,12,false);
+                m.setUp();
+            }
+        };
+        Thread rT = new Thread(r);
+        rT.start();
     }
 
 }
