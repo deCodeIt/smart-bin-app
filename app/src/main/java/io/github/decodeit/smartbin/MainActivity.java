@@ -1,5 +1,6 @@
 package io.github.decodeit.smartbin;
 
+import android.content.pm.PackageManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -10,12 +11,24 @@ public class MainActivity extends AppCompatActivity {
     private WifiService wifiService;
     public static final String WIFI_TAG = "WIFI";
     private boolean processingWifi = false;
+    public static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 0x12345;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         wifiService = new WifiService(this); // Instantiate WifiService Object for future use
         initializeWifi();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION) {
+            for (int grantResult : grantResults) {
+                if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                    return;
+                }
+            }
+        }
     }
 
     @Override
