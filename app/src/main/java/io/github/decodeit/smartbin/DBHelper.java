@@ -7,7 +7,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import android.widget.Spinner;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -59,11 +61,11 @@ public class DBHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public boolean insertWifiData(ArrayList<Integer> signal, ArrayList<Integer> label) {
+    public boolean insertWifiData(ArrayList<Integer> signal) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(SIGNAL_WIFI_COLUMN_NAME,android.text.TextUtils.join(",",signal));
-        cv.put(LABEL_WIFI_COLUMN_NAME, android.text.TextUtils.join(",",label));
+        cv.put(LABEL_WIFI_COLUMN_NAME, getLabel());
         db.insert(WIFI_TABLE_NAME,null,cv);
         db.close();
         return true;
@@ -85,5 +87,14 @@ public class DBHelper extends SQLiteOpenHelper {
             res.moveToNext();
         }
         return signalData;
+    }
+
+    private String getLabel(){
+        // gets the current label set in MainActivity by user for current recorded data
+        String label = String.valueOf(((Spinner)activity.findViewById(R.id.label_paper_clothes)).getSelectedItem()) + "," +
+                String.valueOf(((Spinner)activity.findViewById(R.id.label_water)).getSelectedItem()) + "," +
+                String.valueOf(((Spinner)activity.findViewById(R.id.label_metal)).getSelectedItem());
+
+        return label;
     }
 }
