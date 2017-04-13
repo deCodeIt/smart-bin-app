@@ -108,9 +108,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 clientStop.setEnabled(false);
-                clientCollectSamples.setEnabled(false);
                 clientNotCollectSamples.setEnabled(false);
                 wifiService.disconnect();
+                clientCollectSamples.setEnabled(false);
                 clientStart.setEnabled(true);
             }
         });
@@ -127,9 +127,9 @@ public class MainActivity extends AppCompatActivity {
         clientNotCollectSamples.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                clientNotCollectSamples.setEnabled(false);
                 wifiService.stopCollectingSamples();
                 clientCollectSamples.setEnabled(true);
+                clientNotCollectSamples.setEnabled(false);
             }
         });
 
