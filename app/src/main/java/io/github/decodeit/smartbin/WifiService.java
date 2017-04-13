@@ -45,7 +45,7 @@ public class WifiService {
     private static final String passkey = "cuteassfuck"; // Hotspot Password
     private boolean isCollectingSamples = false;
 //    private static final float SAMPLES_PER_SECOND = 2.0f;
-    private static final float MAX_SAMPLES = 20; // samples to be collected
+    private static final float MAX_SAMPLES = 5.0f; // samples to be collected
     private float NUM_SAMPLES; // current number of samples collected
     private Thread t;
     private BroadcastReceiver isConnected;
@@ -60,6 +60,9 @@ public class WifiService {
 
         // signal strength recorded will be stored over here
         signalHistory = new ArrayList<Integer>((int)MAX_SAMPLES);
+        for(int _i=0;_i<MAX_SAMPLES; _i++) {
+            signalHistory.add(null);
+        }
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
             activity.requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
@@ -154,6 +157,10 @@ public class WifiService {
     public void stopCollectingSamples(){
         isCollectingSamples = false;
         signalStrengthTextView.setText(R.string.network_down);
+        if(NUM_SAMPLES == MAX_SAMPLES){
+            // store the data in table
+            MainActivity.db.insertWifiData(signalHistory,signalHistory);
+        }
         activity.findViewById(R.id.client_start).setEnabled(true);
         activity.findViewById(R.id.client_stop).setEnabled(false);
     }
