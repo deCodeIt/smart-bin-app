@@ -12,10 +12,13 @@ public class MainActivity extends AppCompatActivity {
     public static final String WIFI_TAG = "WIFI";
     private boolean processingWifi = false;
     public static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 0x12345;
+    public static DBHelper db;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        db = new DBHelper(this); // get an instance of DBHelper
         wifiService = new WifiService(this); // Instantiate WifiService Object for future use
         initializeWifi();
     }
