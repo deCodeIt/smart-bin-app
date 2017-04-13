@@ -2,10 +2,8 @@ package io.github.decodeit.smartbin;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.LinearLayout;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -52,10 +50,12 @@ public class MainActivity extends AppCompatActivity {
         // hotspot button clicked
         final Button wifiHotspot = (Button) findViewById(R.id.wifi_hotspot);
         final Button wifiClient = (Button) findViewById(R.id.wifi_client);
-        final Button clientStart = (Button) findViewById(R.id.client_start);
-        final Button clientStop = (Button) findViewById(R.id.client_stop);
+        final Button clientStart = (Button) findViewById(R.id.client_connect);
+        final Button clientStop = (Button) findViewById(R.id.client_disconnect);
         final Button hotspotStart = (Button) findViewById(R.id.hotspot_start);
         final Button hotspotStop = (Button) findViewById(R.id.hotspot_stop);
+        final Button clientCollectSamples = (Button) findViewById(R.id.client_start);
+        final Button clientNotCollectSamples = (Button) findViewById(R.id.client_stop);
 
 
         wifiHotspot.setOnClickListener(new View.OnClickListener() {
@@ -80,8 +80,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 clientStart.setEnabled(false);
+                clientNotCollectSamples.setEnabled(false);
                 wifiService.connect();
                 clientStop.setEnabled(true);
+                clientCollectSamples.setEnabled(true);
             }
         });
 
@@ -90,10 +92,32 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 clientStop.setEnabled(false);
+                clientCollectSamples.setEnabled(false);
+                clientNotCollectSamples.setEnabled(false);
                 wifiService.disconnect();
                 clientStart.setEnabled(true);
             }
         });
+
+        clientCollectSamples.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clientCollectSamples.setEnabled(false);
+                wifiService.startCollectingSamples();
+                clientNotCollectSamples.setEnabled(true);
+            }
+        });
+
+        clientNotCollectSamples.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clientNotCollectSamples.setEnabled(false);
+                wifiService.stopCollectingSamples();
+                clientCollectSamples.setEnabled(true);
+            }
+        });
+
+
 
         // Start Hotspot
         hotspotStart.setOnClickListener(new View.OnClickListener() {
