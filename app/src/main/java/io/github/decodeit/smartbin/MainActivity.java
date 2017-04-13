@@ -3,6 +3,7 @@ package io.github.decodeit.smartbin;
 import android.content.pm.PackageManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
@@ -10,6 +11,7 @@ public class MainActivity extends AppCompatActivity {
 
     private WifiService wifiService;
     public static final String WIFI_TAG = "WIFI";
+    public static final String TAG = "SB";
     private boolean processingWifi = false;
     public static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 0x12345;
     public static DBHelper db;
@@ -37,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(MainActivity.TAG,"In onResume");
         wifiService.register(); // resumes updating wifi signal strength
     }
 
