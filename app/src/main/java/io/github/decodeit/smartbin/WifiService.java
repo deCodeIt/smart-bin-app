@@ -1,16 +1,20 @@
 package io.github.decodeit.smartbin;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
+import android.os.Build;
+import android.os.SystemClock;
 import android.util.Log;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,7 +23,9 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Handler;
 
 /**
  * Created by laststnd on 7/4/17.
@@ -33,125 +39,90 @@ public class WifiService {
     private Object syncToken;
     private int netId;
     private TextView signalStrengthTextView;
-//    private int currentRSSI;
 //    private static final String ssid = "i_am_smart_bin"; // Hotspot SSID
 //    private static final String passkey = "iloveindia"; // Hotspot Password
     private static final String ssid = "$@UR@B#"; // Hotspot SSID
     private static final String passkey = "cuteassfuck"; // Hotspot Password
     private boolean isCollectingSamples = false;
 //    private static final float SAMPLES_PER_SECOND = 2.0f;
-    private static final float MAX_SAMPLES = 10; // samples to be collected
+    private static final float MAX_SAMPLES = 20; // samples to be collected
     private float NUM_SAMPLES; // current number of samples collected
-
-    private BroadcastReceiver isConnected = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            ConnectivityManager conMan = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo netInfo = conMan.getActiveNetworkInfo();
-            if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && wifiManager!=null && wifiManager.getConnectionInfo().getSSID().equals("\""+ssid+"\"")) {
-                Log.d("WifiReceiver", "Have Wifi Connection");
-                getIpAddress();
-                getServerIpAddress();
-//                runMessageClient();
-            }
-            else
-                Log.d("WifiReceiver", "Don't have Wifi Connection");
-        }
-    };
-
-
-//    private Runnable getWifiSignal = new Runnable() {
-//        @Override
-//        public void run() {
-//            while(true) {
-//                try {
-////                    Log.d(MainActivity.WIFI_TAG, "getWifiSignal");
-//                    if (isCollectingSamples) {
-//                        Log.d(MainActivity.WIFI_TAG, wifiManager.getConnectionInfo().getRssi() + " dBm");
-//                        activity.runOnUiThread(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                signalStrengthTextView.setText(wifiManager.getConnectionInfo().getRssi() + " dBm");
-//                            }
-//                        });
-//                    }
-//                    Thread.sleep(Math.round(1000.0f / SAMPLES_PER_SECOND));
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//    };
-
-
-//    private BroadcastReceiver rssiChangeReceiver = new BroadcastReceiver() {
-//        @Override
-//        public void onReceive(Context context, Intent intent) {
-//            currentRSSI = intent.getIntExtra(WifiManager.EXTRA_NEW_RSSI,0);
-//        }
-//    };
-
+    private Thread t;
+    private BroadcastReceiver isConnected;
     // update wifi signal strength
-    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context c, Intent intent) {
-            String action = intent.getAction();
-            if (action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)){
-//                Log.d(MainActivity.WIFI_TAG, "Scan results available");
-                if (isCollectingSamples){
-                    if(NUM_SAMPLES < MAX_SAMPLES) {
-                        NUM_SAMPLES++;
-                        Log.d(MainActivity.WIFI_TAG, wifiManager.getConnectionInfo().getRssi() + " dBm");
-                        activity.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                signalStrengthTextView.setText(wifiManager.getConnectionInfo().getRssi() + " dBm");
-                            }
-                        });
-                    } else {
-                        stopCollectingSamples();
-                    }
-
-                    // start a fresh scan for next update of signal strength
-                    scanNow();
-                }
-            }
-        }
-    };
+    private BroadcastReceiver broadcastReceiver;
+    private ArrayList<Integer> signalHistory; // store the received signals
 
     // constructor
     WifiService(Activity mActivity){
         // ensure that the hotspot is stopped before Running the app
         this.activity = mActivity;
+
+        // signal strength recorded will be stored over here
+        signalHistory = new ArrayList<Integer>((int)MAX_SAMPLES);
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+            activity.requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                    MainActivity.PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION);
+            //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
+        }
+
+        isConnected = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                ConnectivityManager conMan = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                NetworkInfo netInfo = conMan.getActiveNetworkInfo();
+                if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && wifiManager!=null && wifiManager.getConnectionInfo().getSSID().equals("\""+ssid+"\"")) {
+                    Log.d("WifiReceiver", "Have Wifi Connection");
+                    getIpAddress();
+                    getServerIpAddress();
+//                runMessageClient();
+                }
+                else
+                    Log.d("WifiReceiver", "Don't have Wifi Connection");
+            }
+        };
+
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context c, Intent intent) {
+                String action = intent.getAction();
+                if (action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)){
+//                Log.d(MainActivity.WIFI_TAG, "Scan results available");
+                    List<ScanResult> sr = wifiManager.getScanResults();
+                    if (isCollectingSamples) {
+                        if(sr.size() > 0) {
+                            Log.d(MainActivity.WIFI_TAG, sr.get(0).timestamp + "");
+                            if (NUM_SAMPLES < MAX_SAMPLES) {
+                                signalHistory.set((int)NUM_SAMPLES,wifiManager.getConnectionInfo().getRssi());
+                                NUM_SAMPLES++;
+                                Log.d(MainActivity.WIFI_TAG, "#"+((int)NUM_SAMPLES)+": "+wifiManager.getConnectionInfo().getRssi() + " dBm");
+                                signalStrengthTextView.setText("#"+((int)NUM_SAMPLES)+": "+wifiManager.getConnectionInfo().getRssi() + " dBm");
+                            } else {
+                                stopCollectingSamples();
+                            }
+                        } else {
+                            Log.d(MainActivity.WIFI_TAG, "Empty Scan Results");
+                        }
+                        // start a fresh scan for next update of signal strength
+                        wifiManager.startScan();
+                    }
+                }
+            }
+        };
+
         syncToken = new Object();
         netConfig = new WifiConfiguration();
         signalStrengthTextView = (TextView) activity.findViewById(R.id.client_signal);
+
 
         wifiManager = (WifiManager) activity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         while( !wifiManager.isWifiEnabled() ){
             // turn on the wifi if not
             wifiManager.setWifiEnabled(true);
+            SystemClock.sleep(500);
         }
-//        wifiManager.disconnect();
-
         setUpWifiClient();
-
-//        Thread wifiSignalScanner = new Thread(getWifiSignal);
-//        wifiSignalScanner.start();
-    }
-
-    private final Runnable mStartScan = new Runnable() {
-        @Override
-        public void run() {
-            wifiManager.startScan();
-//            Log.d(MainActivity.WIFI_TAG,"Scanning...");
-        }
-    };
-
-    private void scanNow(){
-        // scan for change in wifi signals
-        Thread t = new Thread(mStartScan);
-        t.start();
     }
 
     private void setUpWifiClient(){
@@ -164,7 +135,7 @@ public class WifiService {
 
         List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
         for( WifiConfiguration i : list ) {
-            wifiManager.disableNetwork(i.networkId);
+//            wifiManager.disableNetwork(i.networkId);
             if(i.SSID != null && i.SSID.equals("\""+ssid+"\"")) {
                 netId = i.networkId;
                 Log.d(MainActivity.WIFI_TAG, "Found Configured Wifi");
@@ -176,7 +147,8 @@ public class WifiService {
     public void startCollectingSamples(){
         NUM_SAMPLES = 0;
         isCollectingSamples = true;
-        scanNow(); // initiate scanning
+//        scanNow(); // initiate scanning
+        wifiManager.startScan();
     }
 
     public void stopCollectingSamples(){
@@ -188,14 +160,18 @@ public class WifiService {
 
     public void register(){
 //        activity.registerReceiver(rssiChangeReceiver, new IntentFilter(WifiManager.RSSI_CHANGED_ACTION));
-        activity.registerReceiver(broadcastReceiver,new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-        activity.registerReceiver(isConnected, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+        if(broadcastReceiver!=null)
+            activity.getApplicationContext().registerReceiver(broadcastReceiver,new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        if(isConnected!=null)
+            activity.getApplicationContext().registerReceiver(isConnected, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
     public void deRegister(){
 //        activity.unregisterReceiver(rssiChangeReceiver);
-        activity.unregisterReceiver(broadcastReceiver);
-        activity.unregisterReceiver(isConnected);
+        if(broadcastReceiver!=null)
+            activity.getApplicationContext().unregisterReceiver(broadcastReceiver);
+        if(isConnected!=null)
+            activity.getApplicationContext().unregisterReceiver(isConnected);
     }
 
     public void connect(){
