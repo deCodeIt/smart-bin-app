@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Handler;
 
@@ -52,12 +53,14 @@ public class WifiService {
     // update wifi signal strength
     private BroadcastReceiver broadcastReceiver;
     private ArrayList<Integer> signalHistory; // store the received signals
+    private long prevTimestamp;
+    private static final long TIME_DIFFERENCE = 500L;
 
     // constructor
     WifiService(Activity mActivity){
         // ensure that the hotspot is stopped before Running the app
         this.activity = mActivity;
-
+        prevTimestamp = 0L;
         // signal strength recorded will be stored over here
         signalHistory = new ArrayList<Integer>((int)MAX_SAMPLES);
         for(int _i=0;_i<MAX_SAMPLES; _i++) {
@@ -81,8 +84,9 @@ public class WifiService {
                     getServerIpAddress();
 //                runMessageClient();
                 }
-                else
+                else {
                     Log.d("WifiReceiver", "Don't have Wifi Connection");
+                }
             }
         };
 
@@ -96,19 +100,24 @@ public class WifiService {
                     if (isCollectingSamples) {
                         if(sr.size() > 0) {
                             Log.d(MainActivity.WIFI_TAG, sr.get(0).timestamp + "");
-                            if (NUM_SAMPLES < MAX_SAMPLES) {
+                            if (NUM_SAMPLES < MAX_SAMPLES && new Date().getTime() - prevTimestamp > TIME_DIFFERENCE) {
+                                prevTimestamp = new Date().getTime();
                                 signalHistory.set((int)NUM_SAMPLES,wifiManager.getConnectionInfo().getRssi());
                                 NUM_SAMPLES++;
                                 Log.d(MainActivity.WIFI_TAG, "#"+((int)NUM_SAMPLES)+": "+wifiManager.getConnectionInfo().getRssi() + " dBm");
                                 signalStrengthTextView.setText("#"+((int)NUM_SAMPLES)+": "+wifiManager.getConnectionInfo().getRssi() + " dBm");
                             } else {
-                                stopCollectingSamples();
+                                Log.d(MainActivity.WIFI_TAG, "Instant Result, noise");
                             }
                         } else {
                             Log.d(MainActivity.WIFI_TAG, "Empty Scan Results");
                         }
                         // start a fresh scan for next update of signal strength
-                        wifiManager.startScan();
+                        if(NUM_SAMPLES < MAX_SAMPLES) {
+                            wifiManager.startScan();
+                        } else {
+                            stopCollectingSamples();
+                        }
                     }
                 }
             }
@@ -138,10 +147,10 @@ public class WifiService {
 
         List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
         for( WifiConfiguration i : list ) {
-//            wifiManager.disableNetwork(i.networkId);
+            wifiManager.disableNetwork(i.networkId);
             if(i.SSID != null && i.SSID.equals("\""+ssid+"\"")) {
                 netId = i.networkId;
-                Log.d(MainActivity.WIFI_TAG, "Found Configured Wifi");
+                Log.d(MainActivity.WIFI_TAG, "Found Configured Wifi at id: " + i.networkId);
 //                break;
             }
         }
@@ -159,13 +168,14 @@ public class WifiService {
         signalStrengthTextView.setText(R.string.network_down);
         if(NUM_SAMPLES == MAX_SAMPLES){
             // store the data in table
-            MainActivity.db.insertWifiData(signalHistory,signalHistory);
+            MainActivity.db.insertWifiData(signalHistory);
         }
         activity.findViewById(R.id.client_start).setEnabled(true);
         activity.findViewById(R.id.client_stop).setEnabled(false);
     }
 
     public void register(){
+        Log.d(MainActivity.WIFI_TAG,"In onRegister");
 //        activity.registerReceiver(rssiChangeReceiver, new IntentFilter(WifiManager.RSSI_CHANGED_ACTION));
         if(broadcastReceiver!=null)
             activity.getApplicationContext().registerReceiver(broadcastReceiver,new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
