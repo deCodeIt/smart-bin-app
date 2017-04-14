@@ -7,12 +7,12 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" android:required="true" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" android:required="true" />
     <uses-permission android:name="android.permission.INTERNET" android:required="true" />
-    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" android:required="true" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" android:required="true" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" android:required="true" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:required="true" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:required="true" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" android:required="true"/>
 
     <application
         android:allowBackup="true"

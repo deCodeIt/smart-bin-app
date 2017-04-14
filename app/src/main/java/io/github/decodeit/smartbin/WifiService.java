@@ -67,10 +67,16 @@ public class WifiService {
             signalHistory.add(null);
         }
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-            activity.requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                    MainActivity.PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION);
-            //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                activity.requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                        MainActivity.PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION);
+                //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
+            }
+            if(activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                activity.requestPermissions( new String[]{Manifest.permission.RECORD_AUDIO},
+                        MainActivity.PERMISSIONS_REQUEST_CODE_RECORD_AUDIO);
+            }
         }
 
         isConnected = new BroadcastReceiver() {

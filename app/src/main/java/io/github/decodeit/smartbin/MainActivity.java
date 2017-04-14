@@ -17,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean processingWifi = false;
     private soundHandler sH;
     public static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 0x12345;
+    public static final int PERMISSIONS_REQUEST_CODE_RECORD_AUDIO = 0x12346;
     public static DBHelper db;
 
     @Override
@@ -33,6 +34,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION) {
+            for (int grantResult : grantResults) {
+                if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                    return;
+                }
+            }
+        } else if (requestCode == PERMISSIONS_REQUEST_CODE_RECORD_AUDIO) {
             for (int grantResult : grantResults) {
                 if (grantResult != PackageManager.PERMISSION_GRANTED) {
                     return;
