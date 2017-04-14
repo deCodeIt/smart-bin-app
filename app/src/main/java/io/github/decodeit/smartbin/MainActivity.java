@@ -1,6 +1,7 @@
 package io.github.decodeit.smartbin;
 
 import android.content.pm.PackageManager;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,8 +12,10 @@ public class MainActivity extends AppCompatActivity {
 
     private WifiService wifiService;
     public static final String WIFI_TAG = "WIFI";
+    public static final String SOUND_TAG = "SOUND";
     public static final String TAG = "SB";
     private boolean processingWifi = false;
+    private soundHandler sH;
     public static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 0x12345;
     public static DBHelper db;
 
@@ -22,7 +25,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         db = new DBHelper(this); // get an instance of DBHelper
         wifiService = new WifiService(this); // Instantiate WifiService Object for future use
+        sH = new soundHandler(this);    // soundhandler object
         initializeWifi();
+        soundHandling();
     }
 
     @Override
@@ -47,6 +52,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         wifiService.deRegister(); // stops updating wifi signal strength
+
+        // added by npk
+        // stop recording
+        sH.stopAudioRecord();
     }
 
     @Override
@@ -200,4 +209,55 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
+
+
+    public void soundHandling(){
+
+
+        //series = new XYSeries("Amplitude");
+        final Button record = (Button) findViewById(R.id.record);
+
+        record.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sH.initialiseAudioRecorder();
+
+                //int DELAY = 41000; // Delay time in milliseconds
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        sH.stopAudioRecord();
+                    }
+                }, sH.DELAY);
+
+
+
+//                sH.thread = new Thread(new Runnable() {
+//                    public void run() {
+//
+//                        while(sH.thread != null && !sH.thread.isInterrupted()){
+//                            //Let's make the thread sleep for a the approximate sampling time, time is in milli sec
+////                            try{Thread.sleep(sH.SAMPLE_DELAY);}catch(InterruptedException ie){ie.printStackTrace();}
+//
+//                            sH.readAudioBuffer();//After this call we can get the last value assigned to the lastLevel variable
+//
+//                            runOnUiThread(new Runnable() {
+//
+//                                @Override
+//                                public void run() {
+//                                    //xval += SAMPLE_DELAY;
+//                                    //series.add(xval, lastLevel);
+//                                    sH.amps.add(sH.lastLevel);
+//                                }
+//                            });
+//                        }
+//                    }
+//                });
+//                sH.thread.start();
+            }
+        });
+
+    }
+
 }
