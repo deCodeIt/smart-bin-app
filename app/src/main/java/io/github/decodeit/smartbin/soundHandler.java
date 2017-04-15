@@ -8,15 +8,21 @@ import android.graphics.Color;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
+import android.media.MediaActionSound;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Environment;
+import android.support.v4.content.res.TypedArrayUtils;
 import android.util.Log;
 import android.widget.LinearLayout;
 
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.MalformedInputException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -127,6 +133,7 @@ public class soundHandler {
     public void initialiseAudioRecorder(){
         //sampleRate = 8000;
         try {
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
             bufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT);
             audio = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate,
@@ -212,12 +219,40 @@ public class soundHandler {
                 String amp = amps.toString();
                 Log.e("amplitudes", amp);
                 Log.e("Size", ""+amps.size());
+                rawDataToWavFile("tmp.wav");
             }
         } catch (Exception e) {e.printStackTrace();}
 
 
         //drawfigure();
 
+    }
+
+    public void rawDataToWavFile(final String outFileName) throws IOException {
+        short[] tmp_buf = new short[amps.size()];
+        for (loopVar=0;loopVar < tmp_buf.length;loopVar++) {
+            tmp_buf[loopVar] = amps.get(loopVar);
+        }
+        Wave w = new Wave(activity,sampleRate,(short)1,tmp_buf,0,amps.size()-1);
+        w.wroteToFile(outFileName);
+    }
+
+    private void writeInt(final DataOutputStream output, final int value) throws IOException {
+        output.write((value >> 0) & 0xff);
+        output.write((value >> 8) & 0xff);
+        output.write((value >> 16) & 0xff);
+        output.write((value >> 24) & 0xff);
+    }
+
+    private void writeShort(final DataOutputStream output, final short value) throws IOException {
+        output.write((value >> 0) & 0xff);
+        output.write((value >> 8) & 0xff);
+    }
+
+    private void writeString(final DataOutputStream output, final String value) throws IOException {
+        for (int i = 0; i < value.length(); i++) {
+            output.write(value.charAt(i));
+        }
     }
 
 //    public void drawfigure(){
