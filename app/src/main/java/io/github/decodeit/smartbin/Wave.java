@@ -97,6 +97,9 @@ public class Wave
         boolean ok=false;
 
         try {
+            if(filename==null){
+                filename = MainActivity.db.getSoundLabel();
+            }
             String FULL_FILE_PATH = activity.getFilesDir()+File.separator+filename;
             Log.d(MainActivity.SOUND_TAG, FULL_FILE_PATH);
             File path = new File(FULL_FILE_PATH);

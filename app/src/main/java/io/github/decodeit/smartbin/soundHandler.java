@@ -219,7 +219,7 @@ public class soundHandler {
                 String amp = amps.toString();
                 Log.e("amplitudes", amp);
                 Log.e("Size", ""+amps.size());
-                rawDataToWavFile("tmp.wav");
+                rawDataToWavFile(null); // null causes the desired file labelling
             }
         } catch (Exception e) {e.printStackTrace();}
 
@@ -235,24 +235,6 @@ public class soundHandler {
         }
         Wave w = new Wave(activity,sampleRate,(short)1,tmp_buf,0,amps.size()-1);
         w.wroteToFile(outFileName);
-    }
-
-    private void writeInt(final DataOutputStream output, final int value) throws IOException {
-        output.write((value >> 0) & 0xff);
-        output.write((value >> 8) & 0xff);
-        output.write((value >> 16) & 0xff);
-        output.write((value >> 24) & 0xff);
-    }
-
-    private void writeShort(final DataOutputStream output, final short value) throws IOException {
-        output.write((value >> 0) & 0xff);
-        output.write((value >> 8) & 0xff);
-    }
-
-    private void writeString(final DataOutputStream output, final String value) throws IOException {
-        for (int i = 0; i < value.length(); i++) {
-            output.write(value.charAt(i));
-        }
     }
 
 //    public void drawfigure(){

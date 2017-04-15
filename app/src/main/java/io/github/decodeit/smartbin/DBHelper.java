@@ -10,8 +10,12 @@ import android.util.Log;
 import android.widget.Spinner;
 
 import java.lang.reflect.Array;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 
 /**
  * Created by laststnd on 13/4/17.
@@ -20,6 +24,8 @@ import java.util.HashMap;
 public class DBHelper extends SQLiteOpenHelper {
     // stores the data collected in sqlite tables
     private Activity activity;
+    private DateFormat df = new SimpleDateFormat("yy_MM_dd_HH_mm_ss", Locale.US);
+    Date dateObj;
 
     private static final String DB_TAG = "DB";
 
@@ -94,6 +100,16 @@ public class DBHelper extends SQLiteOpenHelper {
         String label = String.valueOf(((Spinner)activity.findViewById(R.id.label_paper_clothes)).getSelectedItem()) + "," +
                 String.valueOf(((Spinner)activity.findViewById(R.id.label_water)).getSelectedItem()) + "," +
                 String.valueOf(((Spinner)activity.findViewById(R.id.label_metal)).getSelectedItem());
+
+        return label;
+    }
+
+    public String getSoundLabel(){
+        // gets the current label set in MainActivity by user for current recorded data
+        dateObj = new Date();
+        String label = "P-"+String.valueOf(((Spinner)activity.findViewById(R.id.label_paper_clothes)).getSelectedItem()) + "_W-" +
+                String.valueOf(((Spinner)activity.findViewById(R.id.label_water)).getSelectedItem()) + "_M-" +
+                String.valueOf(((Spinner)activity.findViewById(R.id.label_metal)).getSelectedItem())+ "_"+ df.format(dateObj) + ".wav";
 
         return label;
     }
