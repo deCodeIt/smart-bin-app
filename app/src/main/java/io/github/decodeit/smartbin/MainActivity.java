@@ -1,14 +1,21 @@
 package io.github.decodeit.smartbin;
 
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private WifiService wifiService;
     public static final String WIFI_TAG = "WIFI";
@@ -19,6 +26,9 @@ public class MainActivity extends AppCompatActivity {
     public static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 0x12345;
     public static final int PERMISSIONS_REQUEST_CODE_RECORD_AUDIO = 0x12346;
     public static DBHelper db;
+    public TextView textView;
+    private static SensorManager sensorManager;
+    private Sensor sensor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +39,9 @@ public class MainActivity extends AppCompatActivity {
         sH = new soundHandler(this);    // soundhandler object
         initializeWifi();
         soundHandling();
+        textView = (TextView) findViewById(R.id.textView);
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
     }
 
     @Override
@@ -53,6 +66,12 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         Log.d(MainActivity.TAG,"In onResume");
         wifiService.register(); // resumes updating wifi signal strength
+        if (sensor != null){
+            sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+        } else{
+            Toast.makeText(this, "NOT SUPPORTED", Toast.LENGTH_SHORT).show();
+            finish();
+        }
     }
 
     @Override
@@ -63,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
         // added by npk
         // stop recording
         sH.stopAudioRecord();
+        sensorManager.unregisterListener(this);
     }
 
     @Override
@@ -267,4 +287,19 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        float azimuth = Math.round(sensorEvent.values[0]);
+        float pitch = Math.round(sensorEvent.values[1]);
+        float roll = Math.round(sensorEvent.values[2]);
+        double tesla = Math.sqrt((azimuth*azimuth)+(pitch*pitch)+(roll*roll));
+        String text = String.format("%.0f", tesla);
+        textView.setText(text + "uT");
+
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
 }
