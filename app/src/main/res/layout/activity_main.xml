@@ -273,6 +273,15 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:id="@+id/magnet_options">
+
+                <TextView
+                    android:id="@+id/textView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="0"
+                    android:textSize="32dp"/>
+
                 <Button
                     android:id="@+id/MF_start"
                     android:layout_width="wrap_content"
