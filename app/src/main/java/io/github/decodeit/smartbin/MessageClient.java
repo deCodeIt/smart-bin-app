@@ -28,7 +28,7 @@ public class MessageClient {
         message = new Message(fileName, startTime, duration, terminate);
     }
 
-    public void setUp(){
+    public boolean setUp(){
         try{
             s = new Socket(hostIp,port);
             try {
@@ -39,11 +39,14 @@ public class MessageClient {
                 } else {
                     Log.d(MainActivity.WIFI_TAG, "Empty Message");
                 }
+                return true;
             } catch (Exception e){
                 e.printStackTrace();
+                return false;
             }
         } catch (java.io.IOException e) {
             e.printStackTrace();
+            return false;
         }
     }
 }

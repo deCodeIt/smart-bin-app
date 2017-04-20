@@ -100,7 +100,8 @@ public class Wave
             if(filename==null){
                 filename = MainActivity.db.getSoundLabel();
             }
-            String FULL_FILE_PATH = activity.getFilesDir()+File.separator+filename;
+//            String FULL_FILE_PATH = activity.getFilesDir()+File.separator+filename;
+            String FULL_FILE_PATH = MainActivity.db.getSoundStorageDir() + File.separator + filename;
             Log.d(MainActivity.SOUND_TAG, FULL_FILE_PATH);
             File path = new File(FULL_FILE_PATH);
             FileOutputStream outFile = new FileOutputStream(path);

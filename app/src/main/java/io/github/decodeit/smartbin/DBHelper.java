@@ -6,9 +6,11 @@ import android.database.AbstractCursor;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Environment;
 import android.util.Log;
 import android.widget.Spinner;
 
+import java.io.File;
 import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -49,6 +51,16 @@ public class DBHelper extends SQLiteOpenHelper {
         super(activity.getApplicationContext(),DATABASE_NAME,null,2);
         Log.d(DB_TAG,"IN DBHelper");
         this.activity = activity;
+
+        // initialize sound storage directory
+        File f = new File(Environment.getExternalStorageDirectory(), SOUND_TABLE_NAME);
+        if (!f.exists()) {
+            f.mkdirs();
+        }
+    }
+
+    public String getSoundStorageDir(){
+        return Environment.getExternalStorageDirectory() + File.separator + SOUND_TABLE_NAME;
     }
 
     @Override
