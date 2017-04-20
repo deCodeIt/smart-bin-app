@@ -74,68 +74,68 @@ public class soundHandler {
             }
         };
 
-//        soundRecorder = new BroadcastReceiver() {
-//            @Override
-//            public void onReceive(Context context, Intent intent) {
-//                isRecording = true;
-//                Log.d(MainActivity.SOUND_TAG, "RECORDING media file");
-//
-//                // stop recording after the specified duration (media file duration)
-//                new Handler().postDelayed(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        stopAudioRecord();
-//                        duration = 0;
-//                    }
-//                }, duration);
-//            }
-//        };
+        soundRecorder = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                isRecording = true;
+                Log.d(MainActivity.SOUND_TAG, "RECORDING media file");
+
+                // stop recording after the specified duration (media file duration)
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        stopAudioRecord();
+                        duration = 0;
+                    }
+                }, duration);
+            }
+        };
         alarmManager = (AlarmManager) activity.getSystemService(Context.ALARM_SERVICE);
         register();
     }
 
-//    public void setDelayedRecordingService(long startTime, long duration){
-//        this.duration = duration;
-//        // starts recording media on server after synchronizing with the received message
-//        if(!isRecording){
-////            isRecording = true;
-//            // set recording to start at this time
-//            //prepareSound(message.getFileName());
-//            alarmManager.setExact(AlarmManager.RTC, startTime, pendingIntentClient);
-//            initialiseAudioRecorder();
-//        } else {
-//            Log.d(MainActivity.SOUND_TAG, "Already Recording!");
-//        }
-//    }
-
-    public void setDelayedRecordingService(long startTime, final long duration){
+    public void setDelayedRecordingService(long startTime, long duration){
+        this.duration = duration;
+        // starts recording media on server after synchronizing with the received message
         if(!isRecording){
-            this.duration = duration;
-            // starts recording media on server after synchronizing with the received message
-            isRecording = false;
+//            isRecording = true;
             // set recording to start at this time
-//            alarmManager.setExact(AlarmManager.RTC, startTime, pendingIntentClient);
+            //prepareSound(message.getFileName());
+            alarmManager.setExact(AlarmManager.RTC, startTime, pendingIntentClient);
             initialiseAudioRecorder();
-
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    isRecording = true;
-                    Log.d(MainActivity.SOUND_TAG, "RECORDING media file");
-                    // stop recording after the specified duration (media file duration)
-                    new Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            stopAudioRecord();
-                        }
-                    }, duration);
-                }
-            },startTime-System.currentTimeMillis());
-
         } else {
             Log.d(MainActivity.SOUND_TAG, "Already Recording!");
         }
     }
+
+//    public void setDelayedRecordingService(long startTime, final long duration){
+//        if(!isRecording){
+//            this.duration = duration;
+//            // starts recording media on server after synchronizing with the received message
+//            isRecording = false;
+//            // set recording to start at this time
+////            alarmManager.setExact(AlarmManager.RTC, startTime, pendingIntentClient);
+//            initialiseAudioRecorder();
+//
+//            new Handler().postDelayed(new Runnable() {
+//                @Override
+//                public void run() {
+//                    isRecording = true;
+//                    Log.d(MainActivity.SOUND_TAG, "RECORDING media file");
+//                    // stop recording after the specified duration (media file duration)
+//                    new Handler().postDelayed(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            stopAudioRecord();
+//                        }
+//                    }, duration);
+//                }
+//            },startTime-System.currentTimeMillis());
+//
+//        } else {
+//            Log.d(MainActivity.SOUND_TAG, "Already Recording!");
+//        }
+//    }
 
     public void setDelayedPlayingService(Message message) {
         // starts playing media on server after synchronizing with the received message
@@ -175,17 +175,17 @@ public class soundHandler {
         }
         activity.unregisterReceiver(soundReceiver);
 
-//        if(alarmManager!=null && pendingIntentClient !=null) {
-//            alarmManager.cancel(pendingIntentClient);
-//        }
-//        activity.unregisterReceiver(soundRecorder);
+        if(alarmManager!=null && pendingIntentClient !=null) {
+            alarmManager.cancel(pendingIntentClient);
+        }
+        activity.unregisterReceiver(soundRecorder);
     }
 
     public void register(){
         activity.registerReceiver(soundReceiver,new IntentFilter(ALARM_INTENT_SERVER));
         pendingIntentServer = PendingIntent.getBroadcast(activity,0,new Intent(ALARM_INTENT_SERVER),PendingIntent.FLAG_UPDATE_CURRENT);
-//        activity.registerReceiver(soundRecorder,new IntentFilter(ALARM_INTENT_CLIENT));
-//        pendingIntentClient = PendingIntent.getBroadcast(activity,0,new Intent(ALARM_INTENT_CLIENT),PendingIntent.FLAG_UPDATE_CURRENT);
+        activity.registerReceiver(soundRecorder,new IntentFilter(ALARM_INTENT_CLIENT));
+        pendingIntentClient = PendingIntent.getBroadcast(activity,0,new Intent(ALARM_INTENT_CLIENT),PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
 
