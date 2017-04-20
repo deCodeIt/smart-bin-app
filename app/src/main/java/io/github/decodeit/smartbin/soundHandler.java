@@ -50,7 +50,7 @@ public class soundHandler {
     private PendingIntent pendingIntentServer, pendingIntentClient;
     private final static String ALARM_INTENT_SERVER = "alarmIntentServer";
     private final static String ALARM_INTENT_CLIENT = "alarmIntentClient";
-    public static boolean isRecording = false;
+    public boolean isRecording = false;
     private boolean isPlaying = false;
     private long test_count = 0;
 //    private SharedPreferences settings;
@@ -264,7 +264,7 @@ public class soundHandler {
                 @Override
                 public void onPeriodicNotification(AudioRecord audioRecord) {
 //                    new Thread(audioReadRunnable).start();
-                    Log.d(MainActivity.SOUND_TAG, "Received Periodic Notification"+test_count++);
+//                    Log.d(MainActivity.SOUND_TAG, "Received Periodic Notification"+test_count++);
                     try {
 //                        Log.d(MainActivity.TAG, "Recording");
                         threadPool.execute(audioReadRunnable);
