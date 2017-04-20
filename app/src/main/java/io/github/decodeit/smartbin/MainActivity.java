@@ -16,7 +16,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String WIFI_TAG = "WIFI";
     public static final String SOUND_TAG = "SOUND";
     public static final String TAG = "SB";
-    public static final long SOUND_START_DELAY = 10000; // milliseconds
+    public static final long SOUND_START_DELAY = 5000; // milliseconds
     private boolean processingWifi = false;
     public static soundHandler sH;
     public static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 0x12345;
@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
 
         // added by npk
         // stop recording
-        sH.stopAudioRecord();
+//        sH.stopAudioRecord();
     }
 
     @Override
@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    private void setEnabledButton(final Button button,final boolean enable){
+    public void setEnabledButton(final Button button,final boolean enable){
         this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -258,12 +258,15 @@ public class MainActivity extends AppCompatActivity {
                 if(wifiService.hasConnection()){
                     play.setEnabled(false);
                     long startTime = System.currentTimeMillis()+SOUND_START_DELAY;
-                    wifiService.runMessageClient(startTime,1000,false);
-
+                    String fileName = "sine_wave.wav";
+                    wifiService.runMessageClient(fileName,startTime,sH.getDuration(fileName),false);
+                    sH.setDelayedRecordingService(startTime,sH.getDuration(fileName));
+//                    sH.initialiseAudioRecorder(); // initialize recording but start recording later
 //                    new Handler().postDelayed(new Runnable() {
 //                        @Override
 //                        public void run() {
 //                            Log.d(MainActivity.SOUND_TAG, "Playing Started");
+//                            sH.isRecording = true;
 //                        }
 //                    },SOUND_START_DELAY);
                 } else {
@@ -273,46 +276,46 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        record.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                sH.initialiseAudioRecorder();
-
-                //int DELAY = 41000; // Delay time in milliseconds
-
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        sH.stopAudioRecord();
-                    }
-                }, sH.DELAY);
-
-
-
-//                sH.thread = new Thread(new Runnable() {
+//        record.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                sH.initialiseAudioRecorder();
+//
+//                //int DELAY = 41000; // Delay time in milliseconds
+//
+//                new Handler().postDelayed(new Runnable() {
+//                    @Override
 //                    public void run() {
-//
-//                        while(sH.thread != null && !sH.thread.isInterrupted()){
-//                            //Let's make the thread sleep for a the approximate sampling time, time is in milli sec
-////                            try{Thread.sleep(sH.SAMPLE_DELAY);}catch(InterruptedException ie){ie.printStackTrace();}
-//
-//                            sH.readAudioBuffer();//After this call we can get the last value assigned to the lastLevel variable
-//
-//                            runOnUiThread(new Runnable() {
-//
-//                                @Override
-//                                public void run() {
-//                                    //xval += SAMPLE_DELAY;
-//                                    //series.add(xval, lastLevel);
-//                                    sH.amps.add(sH.lastLevel);
-//                                }
-//                            });
-//                        }
+//                        sH.stopAudioRecord();
 //                    }
-//                });
-//                sH.thread.start();
-            }
-        });
+//                }, sH.DELAY);
+//
+//
+//
+////                sH.thread = new Thread(new Runnable() {
+////                    public void run() {
+////
+////                        while(sH.thread != null && !sH.thread.isInterrupted()){
+////                            //Let's make the thread sleep for a the approximate sampling time, time is in milli sec
+//////                            try{Thread.sleep(sH.SAMPLE_DELAY);}catch(InterruptedException ie){ie.printStackTrace();}
+////
+////                            sH.readAudioBuffer();//After this call we can get the last value assigned to the lastLevel variable
+////
+////                            runOnUiThread(new Runnable() {
+////
+////                                @Override
+////                                public void run() {
+////                                    //xval += SAMPLE_DELAY;
+////                                    //series.add(xval, lastLevel);
+////                                    sH.amps.add(sH.lastLevel);
+////                                }
+////                            });
+////                        }
+////                    }
+////                });
+////                sH.thread.start();
+//            }
+//        });
 
     }
 

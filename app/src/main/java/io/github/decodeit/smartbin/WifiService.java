@@ -351,14 +351,14 @@ public class WifiService {
         new Thread(r).start();
     }
 
-    public void runMessageClient(final long startTime, final long duration, final boolean isLast){
+    public void runMessageClient(final String fileName, final long startTime, final long duration, final boolean isLast){
         // runs the client and sends message to server
         if(isLinked) {
             Runnable r = new Runnable() {
                 @Override
                 public void run() {
                     MessageClient m = new MessageClient(activity, getServerIpAddress());
-                    m.createMessage(startTime, duration, isLast);
+                    m.createMessage(fileName, startTime, duration, isLast);
                     m.setUp();
                 }
             };

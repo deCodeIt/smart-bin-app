@@ -2,42 +2,27 @@ package io.github.decodeit.smartbin;
 
 import android.app.Activity;
 import android.app.AlarmManager;
-import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.app.SharedElementCallback;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
-import android.graphics.Color;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioRecord;
-import android.media.MediaActionSound;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
-import android.net.Uri;
-import android.os.Environment;
-import android.support.v4.content.res.TypedArrayUtils;
+import android.os.Handler;
 import android.util.Log;
-import android.widget.LinearLayout;
-import android.widget.Toast;
 
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.charset.MalformedInputException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by prince on 7/4/17.
@@ -56,22 +41,29 @@ public class soundHandler {
     public double lastLevel = 0;
     public Thread thread;
     public final int SAMPLE_DELAY = 1;  // in ms
-    public final int DELAY = 5000; // time in millisecond after which have to stop recording
-    public ArrayList<Short> amps = new ArrayList<Short>();
+    public long duration = 0; // time in millisecond after which have to stop recording
+    public ArrayList<Short> amps;
     private int loopVar, bufferReadResult;
     private short[] buffer;
     private  ExecutorService threadPool;
     private AlarmManager alarmManager;
-    private PendingIntent pendingIntent;
-    private final static String ALARM_INTENT = "alarmIntent";
-    private boolean isRecording = false;
+    private PendingIntent pendingIntentServer, pendingIntentClient;
+    private final static String ALARM_INTENT_SERVER = "alarmIntentServer";
+    private final static String ALARM_INTENT_CLIENT = "alarmIntentClient";
+    public static boolean isRecording = false;
     private boolean isPlaying = false;
+    private long test_count = 0;
+//    private SharedPreferences settings;
+//    private final static String SHARED_PREFS = "SmartBinPrefs";
 
-    private BroadcastReceiver soundReceiver;
+
+    private BroadcastReceiver soundReceiver,soundRecorder;
 
     // constructor
     soundHandler(Activity act){
         this.activity = act;
+        isRecording = false;
+        amps = new ArrayList<Short>();
         soundReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -81,8 +73,68 @@ public class soundHandler {
 //                Toast.makeText(activity, "GOT INTENT", Toast.LENGTH_SHORT).show();
             }
         };
+
+//        soundRecorder = new BroadcastReceiver() {
+//            @Override
+//            public void onReceive(Context context, Intent intent) {
+//                isRecording = true;
+//                Log.d(MainActivity.SOUND_TAG, "RECORDING media file");
+//
+//                // stop recording after the specified duration (media file duration)
+//                new Handler().postDelayed(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        stopAudioRecord();
+//                        duration = 0;
+//                    }
+//                }, duration);
+//            }
+//        };
         alarmManager = (AlarmManager) activity.getSystemService(Context.ALARM_SERVICE);
         register();
+    }
+
+//    public void setDelayedRecordingService(long startTime, long duration){
+//        this.duration = duration;
+//        // starts recording media on server after synchronizing with the received message
+//        if(!isRecording){
+////            isRecording = true;
+//            // set recording to start at this time
+//            //prepareSound(message.getFileName());
+//            alarmManager.setExact(AlarmManager.RTC, startTime, pendingIntentClient);
+//            initialiseAudioRecorder();
+//        } else {
+//            Log.d(MainActivity.SOUND_TAG, "Already Recording!");
+//        }
+//    }
+
+    public void setDelayedRecordingService(long startTime, final long duration){
+        if(!isRecording){
+            this.duration = duration;
+            // starts recording media on server after synchronizing with the received message
+            isRecording = false;
+            // set recording to start at this time
+//            alarmManager.setExact(AlarmManager.RTC, startTime, pendingIntentClient);
+            initialiseAudioRecorder();
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    isRecording = true;
+                    Log.d(MainActivity.SOUND_TAG, "RECORDING media file");
+                    // stop recording after the specified duration (media file duration)
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            stopAudioRecord();
+                        }
+                    }, duration);
+                }
+            },startTime-System.currentTimeMillis());
+
+        } else {
+            Log.d(MainActivity.SOUND_TAG, "Already Recording!");
+        }
     }
 
     public void setDelayedPlayingService(Message message) {
@@ -92,7 +144,7 @@ public class soundHandler {
                 isPlaying = true;
                 // set recording to start at this time
                 prepareSound(message.getFileName());
-                alarmManager.setExact(AlarmManager.RTC, message.getStartTime(), pendingIntent);
+                alarmManager.setExact(AlarmManager.RTC, message.getStartTime(), pendingIntentServer);
             } else {
                 Log.d(MainActivity.SOUND_TAG, "Received Message after start time has passed");
             }
@@ -108,10 +160,9 @@ public class soundHandler {
             AssetFileDescriptor afd = activity.getAssets().openFd(fileName);
             mediaMetadataRetriever.setDataSource(afd.getFileDescriptor(),afd.getStartOffset(),afd.getLength());
             String durationStr = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-//            return Utils.formateMilliSeccond(Long.parseLong(durationStr));
             mediaMetadataRetriever.release();
             Log.d(MainActivity.SOUND_TAG, "Duration: "+durationStr);
-            return 0;
+            return Long.parseLong(durationStr);
         } catch (IOException e) {
             Log.d(MainActivity.SOUND_TAG, "Error getting file Duration");
             return -1L;
@@ -119,16 +170,24 @@ public class soundHandler {
     }
 
     public void deRegister(){
-        if(alarmManager!=null && pendingIntent!=null) {
-            alarmManager.cancel(pendingIntent);
+        if(alarmManager!=null && pendingIntentServer !=null) {
+            alarmManager.cancel(pendingIntentServer);
         }
         activity.unregisterReceiver(soundReceiver);
+
+//        if(alarmManager!=null && pendingIntentClient !=null) {
+//            alarmManager.cancel(pendingIntentClient);
+//        }
+//        activity.unregisterReceiver(soundRecorder);
     }
 
     public void register(){
-        activity.registerReceiver(soundReceiver,new IntentFilter(ALARM_INTENT));
-        pendingIntent = PendingIntent.getBroadcast(activity,0,new Intent(ALARM_INTENT),0);
+        activity.registerReceiver(soundReceiver,new IntentFilter(ALARM_INTENT_SERVER));
+        pendingIntentServer = PendingIntent.getBroadcast(activity,0,new Intent(ALARM_INTENT_SERVER),PendingIntent.FLAG_UPDATE_CURRENT);
+//        activity.registerReceiver(soundRecorder,new IntentFilter(ALARM_INTENT_CLIENT));
+//        pendingIntentClient = PendingIntent.getBroadcast(activity,0,new Intent(ALARM_INTENT_CLIENT),PendingIntent.FLAG_UPDATE_CURRENT);
     }
+
 
     public void prepareSound(String fileName){
         // fileName = "sine_wave.wav"
@@ -158,22 +217,6 @@ public class soundHandler {
         }
     }
 
-//    public void audioPlay(String path, String file){
-//        Uri myUri = Uri.parse(path + File.separator + file); // initialize Uri here
-//        mediaPlayer= new MediaPlayer();
-//        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-//        try {
-//            mediaPlayer.setDataSource(activity.getBaseContext(), myUri);
-//            mediaPlayer.prepare();
-//            mediaPlayer.start();
-//            Log.e("Starting", "Media Player");
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//        mediaPlayer.setOnCompletionListener(onCompletionListener);
-//    }
-//
     public MediaPlayer.OnCompletionListener onCompletionListener = new MediaPlayer.OnCompletionListener() {
 
         @Override
@@ -186,47 +229,6 @@ public class soundHandler {
             isPlaying = false;
         }
     };
-//
-//    public void playerStop(MediaPlayer mp){
-//        mp.stop();
-//        mp.release();
-//        Log.e("Force Stopping", "Media Player");
-//        mp = null;
-//    }
-//
-//    public void startRecord(String record_file){
-//        recorder = new MediaRecorder();
-//        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-//        recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-//        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-//        // creating file
-//        //File dir = Environment.getExternalStorageDirectory();
-//        File dir = Environment.getExternalStorageDirectory();
-//        try {
-//            audiofile = File.createTempFile(record_file, ".3gp", dir);
-//            //File au = File
-//        } catch (IOException e) {
-//            Log.e("Error", "external storage access error");
-//            return;
-//        }
-//        try {
-//
-//            recorder.setOutputFile(audiofile.getAbsolutePath());
-//            //recorder.setMaxDuration(40000);
-//            recorder.prepare();
-//            recorder.start();   // Recording is now started
-//            Log.e("Starting", "Recording");
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void stop_record(MediaRecorder mr){
-//        mr.stop();
-//        mr.reset();   // You can reuse the object by going back to setAudioSource() step
-//        Log.e("Stopping", "Recording");
-//        mr.release();
-//    }
 
     public void initialiseAudioRecorder(){
         //sampleRate = 8000;
@@ -238,12 +240,13 @@ public class soundHandler {
                     AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT, bufferSize);
 
-//            buffer = new short[bufferSize];
+            buffer = new short[bufferSize];
             Log.d(MainActivity.SOUND_TAG,"InInitializeAudioRecorder, bufferSize: "+bufferSize);
 
             final Runnable audioReadRunnable = new Runnable() {
                 @Override
                 public void run() {
+//                    Log.d(MainActivity.SOUND_TAG, "Read from buffer");
                     readAudioBuffer();
                 }
             };
@@ -261,25 +264,24 @@ public class soundHandler {
                 @Override
                 public void onPeriodicNotification(AudioRecord audioRecord) {
 //                    new Thread(audioReadRunnable).start();
+                    Log.d(MainActivity.SOUND_TAG, "Received Periodic Notification"+test_count++);
                     try {
+//                        Log.d(MainActivity.TAG, "Recording");
                         threadPool.execute(audioReadRunnable);
-                    } catch (java.util.concurrent.RejectedExecutionException e){
-                        Log.d(MainActivity.SOUND_TAG,"Thread Terminated");
-                    } catch(Exception e) {
+                    } catch (java.util.concurrent.RejectedExecutionException e) {
+                        Log.d(MainActivity.SOUND_TAG, "Thread Terminated");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
-//                    threadPool.shutdown();
+//                      threadPool.shutdown();
                 }
             });
 
             Log.e("Initialize", "audioRecord Initialized");
-
-            Log.e("Starting","Recorder");
             audio.startRecording();
         } catch (Exception e) {
             android.util.Log.e("TrackingFlow", "Exception", e);
         }
-
     }
 
     // function to get output
@@ -290,9 +292,13 @@ public class soundHandler {
                 // Sense the voice…
                 buffer = new short[bufferSize];
                 bufferReadResult = audio.read(buffer, 0, bufferSize);
-                for(loopVar=0; loopVar<bufferReadResult; loopVar++) {
-                    amps.add(buffer[loopVar]);
+                if(isRecording) {
+                    for (loopVar = 0; loopVar < bufferReadResult; loopVar++) {
+                        amps.add(buffer[loopVar]);
+                    }
                 }
+            } else {
+                Log.d(MainActivity.SOUND_TAG, "Audio is Null");
             }
         }
         catch (Exception e) {
@@ -301,6 +307,9 @@ public class soundHandler {
     }
 
     public void stopAudioRecord(){
+        Log.d(MainActivity.SOUND_TAG, "Terminating Recording");
+        duration = 0;
+        isRecording = false;
         if(thread != null && !thread.isInterrupted()){
             thread.interrupt();
             thread = null;
@@ -318,6 +327,8 @@ public class soundHandler {
                 Log.e("amplitudes", amp);
                 Log.e("Size", ""+amps.size());
                 rawDataToWavFile(null); // null causes the desired file labelling
+                amps = new ArrayList<Short>(); // make space for new array read
+                activity.findViewById(R.id.sound_start).setEnabled(true); // enable the button to record another file
             }
         } catch (Exception e) {e.printStackTrace();}
 

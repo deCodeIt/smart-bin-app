@@ -24,8 +24,8 @@ public class MessageClient {
         this.hostIp = hostIp;
     }
 
-    public void createMessage(long startTime, long duration, boolean terminate) {
-        message = new Message(startTime, duration, terminate);
+    public void createMessage(final String fileName, long startTime, long duration, boolean terminate) {
+        message = new Message(fileName, startTime, duration, terminate);
     }
 
     public void setUp(){
