@@ -1,6 +1,8 @@
 package io.github.decodeit.smartbin;
 
+import android.Manifest;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -10,20 +12,40 @@ import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
 
-    private WifiService wifiService;
+    public static WifiService wifiService;
     public static final String WIFI_TAG = "WIFI";
     public static final String SOUND_TAG = "SOUND";
     public static final String TAG = "SB";
+    public static final long SOUND_START_DELAY = 10000; // milliseconds
     private boolean processingWifi = false;
-    private soundHandler sH;
+    public static soundHandler sH;
     public static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 0x12345;
     public static final int PERMISSIONS_REQUEST_CODE_RECORD_AUDIO = 0x12346;
+    public static final int PERMISSIONS_REQUEST_CODE_WRITE_EXTERNAL_STORAGE = 0x12347;
     public static DBHelper db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // get permission for Android versions >= Marshmallow (6.0)
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                        MainActivity.PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION);
+                //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
+            }
+            if(checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions( new String[]{Manifest.permission.RECORD_AUDIO},
+                        MainActivity.PERMISSIONS_REQUEST_CODE_RECORD_AUDIO);
+            }
+            if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions( new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        MainActivity.PERMISSIONS_REQUEST_CODE_WRITE_EXTERNAL_STORAGE);
+            }
+        }
+
         db = new DBHelper(this); // get an instance of DBHelper
         wifiService = new WifiService(this); // Instantiate WifiService Object for future use
         sH = new soundHandler(this);    // soundhandler object
@@ -40,6 +62,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         } else if (requestCode == PERMISSIONS_REQUEST_CODE_RECORD_AUDIO) {
+            for (int grantResult : grantResults) {
+                if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                    return;
+                }
+            }
+        } else if (requestCode == PERMISSIONS_REQUEST_CODE_WRITE_EXTERNAL_STORAGE) {
             for (int grantResult : grantResults) {
                 if (grantResult != PackageManager.PERMISSION_GRANTED) {
                     return;
@@ -68,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         wifiService.disableHotspot();
+        sH.deRegister();
         super.onDestroy();
     }
 
@@ -214,15 +243,35 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
     }
-
 
     public void soundHandling(){
 
 
         //series = new XYSeries("Amplitude");
         final Button record = (Button) findViewById(R.id.record);
+        final Button play = (Button) findViewById(R.id.sound_start);
+
+        play.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(wifiService.hasConnection()){
+                    play.setEnabled(false);
+                    long startTime = System.currentTimeMillis()+SOUND_START_DELAY;
+                    wifiService.runMessageClient(startTime,1000,false);
+
+//                    new Handler().postDelayed(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            Log.d(MainActivity.SOUND_TAG, "Playing Started");
+//                        }
+//                    },SOUND_START_DELAY);
+                } else {
+                    play.setEnabled(true);
+                    Log.d(MainActivity.SOUND_TAG, "Not yet connected to Wifi");
+                }
+            }
+        });
 
         record.setOnClickListener(new View.OnClickListener() {
             @Override

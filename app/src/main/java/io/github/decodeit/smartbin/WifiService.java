@@ -40,10 +40,12 @@ public class WifiService {
     private Object syncToken;
     private int netId;
     private TextView signalStrengthTextView;
-//    private static final String ssid = "i_am_smart_bin"; // Hotspot SSID
-//    private static final String passkey = "iloveindia"; // Hotspot Password
-    private static final String ssid = "$@UR@B#"; // Hotspot SSID
-    private static final String passkey = "cuteassfuck"; // Hotspot Password
+    private static final String ssid = "i_am_smart_bin"; // Hotspot SSID
+    private static final String passkey = "iloveindia"; // Hotspot Password
+//    private static final String ssid = "$@UR@B#"; // Hotspot SSID
+//    private static final String passkey = "cuteassfuck"; // Hotspot Password
+//    private static final String ssid = "LifeHacker"; // Hotspot SSID
+//    private static final String passkey = "getlost@123"; // Hotspot Password
     private boolean isCollectingSamples = false;
 //    private static final float SAMPLES_PER_SECOND = 2.0f;
     private static final float MAX_SAMPLES = 5.0f; // samples to be collected
@@ -55,6 +57,7 @@ public class WifiService {
     private ArrayList<Integer> signalHistory; // store the received signals
     private long prevTimestamp;
     private static final long TIME_DIFFERENCE = 500L;
+    private boolean isLinked = false; // tells whether the client is connected or not
 
     // constructor
     WifiService(Activity mActivity){
@@ -67,18 +70,6 @@ public class WifiService {
             signalHistory.add(null);
         }
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                activity.requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                        MainActivity.PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION);
-                //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
-            }
-            if(activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                activity.requestPermissions( new String[]{Manifest.permission.RECORD_AUDIO},
-                        MainActivity.PERMISSIONS_REQUEST_CODE_RECORD_AUDIO);
-            }
-        }
-
         isConnected = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -88,7 +79,8 @@ public class WifiService {
                     Log.d("WifiReceiver", "Have Wifi Connection");
                     getIpAddress();
                     getServerIpAddress();
-//                runMessageClient();
+                    isLinked = true;
+//                    runMessageClient(); // runs the message client
                 }
                 else {
                     Log.d("WifiReceiver", "Don't have Wifi Connection");
@@ -210,6 +202,7 @@ public class WifiService {
 
     public void disconnect(){
         // clients disconnects from a wifi network
+        isLinked = false;
         wifiManager.disableNetwork(netId);
         wifiManager.disconnect();
         signalStrengthTextView.setText(R.string.network_down);
@@ -253,6 +246,10 @@ public class WifiService {
         } catch (Exception e) {
             Log.e(this.getClass().toString(), "", e);
         }
+    }
+
+    public boolean hasConnection(){
+        return isLinked;
     }
 
     public void disableHotspot(){
@@ -351,22 +348,24 @@ public class WifiService {
                 m.setUp();
             }
         };
-        Thread rT = new Thread(r);
-        rT.start();
+        new Thread(r).start();
     }
 
-    private void runMessageClient(){
+    public void runMessageClient(final long startTime, final long duration, final boolean isLast){
         // runs the client and sends message to server
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                MessageClient m = new MessageClient(activity,getServerIpAddress());
-                m.createMessage(123,12,false);
-                m.setUp();
-            }
-        };
-        Thread rT = new Thread(r);
-        rT.start();
+        if(isLinked) {
+            Runnable r = new Runnable() {
+                @Override
+                public void run() {
+                    MessageClient m = new MessageClient(activity, getServerIpAddress());
+                    m.createMessage(startTime, duration, isLast);
+                    m.setUp();
+                }
+            };
+            new Thread(r).start();
+        } else {
+            Log.d(MainActivity.SOUND_TAG, "Not yet connected to hotspot");
+        }
     }
 
 }

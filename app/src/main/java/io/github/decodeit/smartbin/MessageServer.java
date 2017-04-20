@@ -40,6 +40,7 @@ public class MessageServer {
                             @Override
                             public void run() {
                                 Toast.makeText(activity, "Begin at: " + m.getStartTime() + ", duration: " + m.getDuration(), Toast.LENGTH_SHORT).show();
+                                MainActivity.sH.setDelayedPlayingService(m); // set up playing media after the duration
                             }
                         });
                         flag = m.isLast(); // check if this is the last message
