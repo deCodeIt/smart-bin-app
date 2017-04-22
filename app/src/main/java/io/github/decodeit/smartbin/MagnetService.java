@@ -59,7 +59,7 @@ public class MagnetService implements SensorEventListener {
                     currentStrength = getMagneticFieldStrength();
 
                     // update the textview
-                    difference = pastStrength-currentStrength;
+                    difference = Math.abs(pastStrength-currentStrength);
 
                     updateTextField(difference);
 
