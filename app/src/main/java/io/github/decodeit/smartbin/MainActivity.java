@@ -13,12 +13,16 @@ import android.widget.Button;
 public class MainActivity extends AppCompatActivity {
 
     public static WifiService wifiService;
+    public static soundHandler sH;
+    public static MagnetService magnetService;
+
     public static final String WIFI_TAG = "WIFI";
     public static final String SOUND_TAG = "SOUND";
+    public static final String MAGNET_TAG = "MAGNET";
     public static final String TAG = "SB";
     public static final long SOUND_START_DELAY = 5000; // milliseconds
     private boolean processingWifi = false;
-    public static soundHandler sH;
+
     public static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 0x12345;
     public static final int PERMISSIONS_REQUEST_CODE_RECORD_AUDIO = 0x12346;
     public static final int PERMISSIONS_REQUEST_CODE_WRITE_EXTERNAL_STORAGE = 0x12347;
@@ -49,8 +53,10 @@ public class MainActivity extends AppCompatActivity {
         db = new DBHelper(this); // get an instance of DBHelper
         wifiService = new WifiService(this); // Instantiate WifiService Object for future use
         sH = new soundHandler(this);    // soundhandler object
+        magnetService = new MagnetService(this);
         initializeWifi();
         soundHandling();
+        magneticHandling();
     }
 
     @Override
@@ -81,12 +87,14 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         Log.d(MainActivity.TAG,"In onResume");
         wifiService.register(); // resumes updating wifi signal strength
+        magnetService.register();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         wifiService.deRegister(); // stops updating wifi signal strength
+        magnetService.deRegister();
 
         // added by npk
         // stop recording
@@ -263,6 +271,29 @@ public class MainActivity extends AppCompatActivity {
                     play.setEnabled(true);
                     Log.d(MainActivity.SOUND_TAG, "Not yet connected to Wifi");
                 }
+            }
+        });
+    }
+
+    private void magneticHandling(){
+        final Button start = (Button) findViewById(R.id.MF_start);
+        final Button stop = (Button) findViewById(R.id.MF_stop);
+
+        start.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                start.setEnabled(false);
+                stop.setEnabled(true);
+                magnetService.start();
+            }
+        });
+
+        stop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stop.setEnabled(false);
+                start.setEnabled(true);
+                magnetService.stop();
             }
         });
     }

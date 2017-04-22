@@ -272,15 +272,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:id="@+id/magnet_options">
-
-                <TextView
-                    android:id="@+id/textView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="0"
-                    android:textSize="32dp"/>
+                android:id="@+id/magnet_options"
+                android:gravity="center">
 
                 <Button
                     android:id="@+id/MF_start"
@@ -289,12 +282,22 @@
                     android:text="Start"
                     android:layout_weight="1"/>
 
-                <Button
-                    android:id="@+id/MF_get"
+                <TextView
+                    android:id="@+id/magnetic_field_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Receive"
-                    android:layout_weight="1"/>
+                    android:layout_weight="1"
+                    android:text="N/A"
+                    android:ems="5"
+                    android:gravity="center"/>
+
+                <Button
+                    android:id="@+id/MF_stop"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Stop"
+                    android:layout_weight="1"
+                    android:enabled="false"/>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
