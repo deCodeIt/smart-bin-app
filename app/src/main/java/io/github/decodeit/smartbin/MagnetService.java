@@ -27,7 +27,7 @@ public class MagnetService implements SensorEventListener {
     private boolean isReading = false;
     private TextView tv; // magnetic field reading TextView
     ArrayList<Float> magneticReading;
-    private float currentStrength; // useless but saves memory and speeds up
+    private float currentStrength=0, pastStrength=0, difference; // useless but saves memory and speeds up
 
     MagnetService( Activity activity){
         this.activity = activity;
@@ -59,10 +59,15 @@ public class MagnetService implements SensorEventListener {
                     currentStrength = getMagneticFieldStrength();
 
                     // update the textview
-                    updateTextField(currentStrength);
+                    difference = pastStrength-currentStrength;
+
+                    updateTextField(difference);
+
+
 
                     // append it in array
                     magneticReading.add(currentStrength);
+                    pastStrength = currentStrength;
 
                     break;
                 default:
@@ -73,7 +78,7 @@ public class MagnetService implements SensorEventListener {
 
     private void updateTextField(float strength){
         // updates the textView
-        tv.setText(String.valueOf(strength));
+        tv.setText(String.format("%.0f", strength));
     }
 
     private float getMagneticFieldStrength(){
