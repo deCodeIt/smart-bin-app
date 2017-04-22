@@ -11,6 +11,9 @@ import android.util.Log;
 import android.widget.Spinner;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -32,6 +35,7 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String DB_TAG = "DB";
 
     private static final String DATABASE_NAME = "smart_bin_db.db";
+    private static final String APP_STORAGE_DIR = "SmartBin";
     private static final String WIFI_TABLE_NAME = "wifi_data";
     private static final String SOUND_TABLE_NAME = "sound_data";
     private static final String MAGNET_TABLE_NAME = "magnet_data";
@@ -53,14 +57,27 @@ public class DBHelper extends SQLiteOpenHelper {
         this.activity = activity;
 
         // initialize sound storage directory
-        File f = new File(Environment.getExternalStorageDirectory(), SOUND_TABLE_NAME);
+        File f = new File(getAppStorageDirectory(), SOUND_TABLE_NAME);
+        if (!f.exists()) {
+            f.mkdirs();
+        }
+
+        f = new File(getAppStorageDirectory(), WIFI_TABLE_NAME);
         if (!f.exists()) {
             f.mkdirs();
         }
     }
 
+    public String getAppStorageDirectory() {
+        return Environment.getExternalStorageDirectory() + File.separator + APP_STORAGE_DIR;
+    }
+
     public String getSoundStorageDir(){
-        return Environment.getExternalStorageDirectory() + File.separator + SOUND_TABLE_NAME;
+        return getAppStorageDirectory() + File.separator + SOUND_TABLE_NAME;
+    }
+
+    public String getWifiStorageDir(){
+        return getAppStorageDirectory() + File.separator + WIFI_TABLE_NAME;
     }
 
     @Override
@@ -86,13 +103,39 @@ public class DBHelper extends SQLiteOpenHelper {
         cv.put(LABEL_WIFI_COLUMN_NAME, getLabel());
         db.insert(WIFI_TABLE_NAME,null,cv);
         db.close();
-        return true;
+
+        // save to file
+        return saveWifiDataToFile(signal);
+    }
+
+    private boolean saveWifiDataToFile(ArrayList<Integer> signal) {
+        // saves the wifi Reading by appending it to a file
+        boolean ok=false;
+
+        try {
+            String filename = "wifi_data.txt";
+            String FULL_FILE_PATH = MainActivity.db.getWifiStorageDir() + File.separator + filename;
+            Log.d(MainActivity.WIFI_TAG, FULL_FILE_PATH);
+            File path = new File(FULL_FILE_PATH);
+            FileOutputStream outFile = new FileOutputStream(path, true);
+            String data = android.text.TextUtils.join(",",signal) + "," + getLabel();
+            for(int i=0; i<data.length(); ++i) {
+                outFile.write(data.charAt(i));
+            }
+            outFile.write('\n'); // a new line character
+            outFile.close();
+            ok=true;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            ok=false;
+        } catch (IOException e) {
+            ok=false;
+            e.printStackTrace();
+        }
+        return ok;
     }
 
     // TODO Insert function and query for Magnet Data @ Rehmat
-
-
-    // TODO Insert function and query for Sound Data @ Pradeep
 
     public ArrayList<String> getWifiData(){
         ArrayList<String> signalData;

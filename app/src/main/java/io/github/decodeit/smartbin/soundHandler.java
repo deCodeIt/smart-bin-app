@@ -35,7 +35,7 @@ public class soundHandler {
     public  MediaRecorder recorder;
     //String record_file = "";
     public  File audiofile = null;
-    public final int sampleRate = 8000;
+    public final int sampleRate = 22050;
     public AudioRecord audio;
     public int bufferSize;
     public double lastLevel = 0;
