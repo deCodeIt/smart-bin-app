@@ -297,7 +297,8 @@
                     android:layout_height="wrap_content"
                     android:text="Stop"
                     android:layout_weight="1"
-                    android:enabled="false"/>
+                    android:enabled="false"
+                    android:visibility="gone"/>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
