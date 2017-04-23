@@ -3,6 +3,7 @@ package io.github.decodeit.smartbin;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.app.SharedElementCallback;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,19 +11,30 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
+import android.database.Cursor;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * Created by prince on 7/4/17.
@@ -53,6 +65,9 @@ public class soundHandler {
     public boolean isRecording = false;
     private boolean isPlaying = false;
     private long test_count = 0;
+    ProgressDialog progressDialog;
+    private static final int FILE_SELECT_CODE = 0;
+    public ArrayList<String> mediaPaths = new ArrayList<String>();
 //    private SharedPreferences settings;
 //    private final static String SHARED_PREFS = "SmartBinPrefs";
 
@@ -92,6 +107,11 @@ public class soundHandler {
         };
         alarmManager = (AlarmManager) activity.getSystemService(Context.ALARM_SERVICE);
         register();
+
+        // set progress dialog
+        progressDialog = new ProgressDialog(activity);
+        progressDialog.setMessage("Uploading...");
+
     }
 
     public void setDelayedRecordingService(long startTime, long duration){
@@ -346,7 +366,120 @@ public class soundHandler {
         w.wroteToFile(outFileName);
     }
 
-//    public void drawfigure(){
+
+    public void uploadMultipleFiles(String mediaPath1,String mediaPath2, String mediaPath3) {
+        progressDialog.show();
+
+        // Map is used to multipart the file using okhttp3.RequestBody
+        File file1 = new File(mediaPath1);
+        File file2 = new File(mediaPath2);
+        File file3 = new File(mediaPath3);
+
+        // Parsing any Media type file
+        RequestBody requestBody1 = RequestBody.create(MediaType.parse("*/*"), file1);
+        RequestBody requestBody2 = RequestBody.create(MediaType.parse("*/*"), file2);
+        RequestBody requestBody3 = RequestBody.create(MediaType.parse("*/*"), file3);
+
+        MultipartBody.Part fileToUpload1 = MultipartBody.Part.createFormData("file1", file1.getName(), requestBody1);
+        MultipartBody.Part fileToUpload2 = MultipartBody.Part.createFormData("file2", file1.getName(), requestBody2);
+        MultipartBody.Part fileToUpload3 = MultipartBody.Part.createFormData("file2", file1.getName(), requestBody3);
+
+        ApiConfig getResponse = AppConfig.getRetrofit().create(ApiConfig.class);
+        Call<ServerResponse> call = getResponse.uploadMulFile(fileToUpload1, fileToUpload2,fileToUpload3);
+        call.enqueue(new Callback<ServerResponse>() {
+            @Override
+            public void onResponse(Call<ServerResponse> call, Response<ServerResponse> response) {
+                ServerResponse serverResponse = response.body();
+                if (serverResponse != null) {
+                    if (serverResponse.getSuccess()) {
+                        Toast.makeText(activity.getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(activity.getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    assert serverResponse != null;
+                    Log.v("Response", serverResponse.toString());
+                }
+                progressDialog.dismiss();
+            }
+
+            @Override
+            public void onFailure(Call<ServerResponse> call, Throwable t) {
+
+            }
+        });
+    }
+
+
+    public void showFileChooser() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("*/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+        try {
+            activity.startActivityForResult(
+                    Intent.createChooser(intent, "Select a File to Upload"),
+                    FILE_SELECT_CODE);
+        } catch (android.content.ActivityNotFoundException ex) {
+            // Potentially direct the user to the Market with a Dialog
+            Toast.makeText(activity.getApplicationContext(), "Please install a File Manager.",
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    public String getPath(Uri uri) throws URISyntaxException {
+        if ("content".equalsIgnoreCase(uri.getScheme())) {
+            String[] projection = { "_data" };
+            Cursor cursor = null;
+
+            try {
+                cursor = activity.getContentResolver().query(uri, projection, null, null, null);
+                int column_index = cursor.getColumnIndexOrThrow("_data");
+                if (cursor.moveToFirst()) {
+                    return cursor.getString(column_index);
+                }
+            } catch (Exception e) {
+
+                e.printStackTrace();
+
+            }
+        }
+        else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return uri.getPath();
+        }
+
+        return null;
+    }
+
+
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+//        switch (requestCode) {
+//            case FILE_SELECT_CODE:
+//                if (resultCode == RESULT_OK) {
+//                    // Get the Uri of the selected file
+//                    Uri uri = data.getData();
+//                    Log.d(TAG, "File Uri: " + uri.toString());
+//                    // Get the path
+//                    try {
+//                        String path = getPath(uri);
+//                        Log.d(TAG, "File Path: " + path);
+//                    }catch (Exception e){
+//                        e.printStackTrace();
+//                    }
+//
+//
+//                    // Get the file instance
+//                    // File file = new File(path);
+//                    // Initiate the upload
+//                }
+//                break;
+//        }
+//        super.onActivityResult(requestCode, resultCode, data);
+//    }
+
+    //    public void drawfigure(){
 //        XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
 //        dataset.addSeries(series);
 //
@@ -412,6 +545,5 @@ public class soundHandler {
 //
 //        alertDialog.show();
 //    }
-
 
 }
