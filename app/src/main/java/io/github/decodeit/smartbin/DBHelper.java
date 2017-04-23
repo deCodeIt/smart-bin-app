@@ -223,6 +223,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 String.valueOf(((Spinner)activity.findViewById(R.id.label_metal)).getSelectedItem());
 
         return label;
+
     }
 
     public String getSoundLabel(){
