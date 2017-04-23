@@ -381,8 +381,8 @@ public class soundHandler {
         RequestBody requestBody3 = RequestBody.create(MediaType.parse("*/*"), file3);
 
         MultipartBody.Part fileToUpload1 = MultipartBody.Part.createFormData("file1", file1.getName(), requestBody1);
-        MultipartBody.Part fileToUpload2 = MultipartBody.Part.createFormData("file2", file1.getName(), requestBody2);
-        MultipartBody.Part fileToUpload3 = MultipartBody.Part.createFormData("file2", file1.getName(), requestBody3);
+        MultipartBody.Part fileToUpload2 = MultipartBody.Part.createFormData("file2", file2.getName(), requestBody2);
+        MultipartBody.Part fileToUpload3 = MultipartBody.Part.createFormData("file3", file3.getName(), requestBody3);
 
         ApiConfig getResponse = AppConfig.getRetrofit().create(ApiConfig.class);
         Call<ServerResponse> call = getResponse.uploadMulFile(fileToUpload1, fileToUpload2,fileToUpload3);

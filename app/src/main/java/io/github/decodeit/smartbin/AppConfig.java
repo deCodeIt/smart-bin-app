@@ -9,7 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class AppConfig {
     ///  Base url to communicate
-    private static String BASE_URL = "http://10.20.0.108/upload.php";
+    private static String BASE_URL = "http://10.20.0.108/upload.php/";
 
     static Retrofit getRetrofit() {
 
