@@ -13,6 +13,8 @@ import android.widget.TextView;
 import org.w3c.dom.Text;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Locale;
 
 /**
  * Created by Rehmat on 4/10/2017.
@@ -27,13 +29,23 @@ public class MagnetService implements SensorEventListener {
     private boolean isReading = false;
     private TextView tv; // magnetic field reading TextView
     ArrayList<Float> magneticReading;
-    private float currentStrength=0, pastStrength=0, difference, num=0, MAXNUM=1000, AVGNUM=100, SUM=0; // useless but saves memory and speeds up
+    private static final int MAX_NUM = 100; // # of samples to collect before stopping
+    private static final int SLIDING_WINDOW_SIZE = 10; // samples in sliding window to check for field change
+    private static int num = 0;
+    private boolean isReadingBaseMagneticFieldStrength = false; // set to true when reading base magnetic field for first time
+    private float BASE_STRENGTH = 0.0f; // magnetic field in empty bin
+    private float currentStrength=0, pastStrength=0, difference, SUM=0, maxInSample, minInSample; // useless but saves memory and speeds up
 
     MagnetService( Activity activity){
         this.activity = activity;
         mSensorManager = (SensorManager) activity.getSystemService(Context.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         tv = (TextView) activity.findViewById(R.id.magnetic_field_tv);
+        activity.findViewById(R.id.MF_start).setEnabled(false);
+        isReadingBaseMagneticFieldStrength = true;
+        start();
+
+        //TODO disable changing of labels while calculating base magnetic field
     }
 
     public void register(){
@@ -52,32 +64,43 @@ public class MagnetService implements SensorEventListener {
         if (isReading) {
             switch (event.sensor.getType()) {
                 case Sensor.TYPE_MAGNETIC_FIELD:
+                    num++;
                     System.arraycopy(event.values, 0, magnet, 0, 3);
                     // do your updates like:
 
                     // get current magnetic field
                     currentStrength = getMagneticFieldStrength();
-
-                    // update the textview
-                    difference = Math.abs(pastStrength-currentStrength);
-
-                    updateTextField(difference);
-                    if (num<AVGNUM){
-                        SUM=SUM+currentStrength;
-                    }
-                    else if (num==AVGNUM){
-                        pastStrength=SUM/num;
-                    }
-                    else if (num>MAXNUM){
-                        stopCollectingSamples();
-                    }
-
-
-
                     // append it in array
                     magneticReading.add(currentStrength);
-                    num++;
-                    //pastStrength = currentStrength;
+
+                    // do processing
+                    if (isReadingBaseMagneticFieldStrength) {
+                        // collecting data for base magnetic field reading
+                        updateTextField(currentStrength);
+                        if (num < MAX_NUM) {
+                            SUM += currentStrength;
+                        } else {
+                            BASE_STRENGTH = SUM / num; // set base magnetic field strength to the average of all samples
+                            Log.d(MainActivity.MAGNET_TAG, "Base Magnetic Strength: " + BASE_STRENGTH);
+                            stopCollectingSamplesForBaseStrength();
+                        }
+                    } else {
+                        // applying sliding window technique
+                        if(num < MAX_NUM) {
+                            if (num > SLIDING_WINDOW_SIZE) {
+                                // we have at least required number of reading to start/continue out sliding window
+                                minInSample = Collections.min(magneticReading.subList(num - SLIDING_WINDOW_SIZE, num));
+                                maxInSample = Collections.max(magneticReading.subList(num - SLIDING_WINDOW_SIZE, num));
+
+                                difference = Math.abs(maxInSample - minInSample);
+                                updateTextField(difference);
+                            } else {
+                                tv.setText("Reading...");
+                            }
+                        } else {
+                            stopCollectingSamples();
+                        }
+                    }
 
                     break;
                 default:
@@ -88,7 +111,7 @@ public class MagnetService implements SensorEventListener {
 
     private void updateTextField(float strength){
         // updates the textView
-        tv.setText(String.format("%.0f", strength));
+        tv.setText(String.format(Locale.US, "%.2f", strength));
     }
 
     private float getMagneticFieldStrength(){
@@ -103,31 +126,33 @@ public class MagnetService implements SensorEventListener {
 
     public void start(){
         // start Reading
+        // initial values
+        SUM = 0;
+        pastStrength = 0;
+        num = 0;
         magneticReading = new ArrayList<>();
         isReading = true;
+
+        //start reading
         register();
     }
 
-    public void stop(){
-
-
-
-        // save/process the collected values
-
-
-
-        // data is the thing to be stored, overall magnetic field values collected over time
+    public void stopCollectingSamplesForBaseStrength() {
+        // stop reading for base strength
+        deRegister();
+        isReadingBaseMagneticFieldStrength = false;
+        isReading = false;
+        magneticReading.clear(); // clear the array to free up memory
+        activity.findViewById(R.id.MF_start).setEnabled(true); // enable the start button for next reading
     }
+
     public void stopCollectingSamples(){
         deRegister();
-
-        ArrayList<Float> recorderMagneticReadings = magneticReading;
-        magneticReading = new ArrayList<>();
-        String data = android.text.TextUtils.join(",",recorderMagneticReadings);
-        Log.d(MainActivity.MAGNET_TAG,"Samples:"+ recorderMagneticReadings.size() + ":" +data);
-        MainActivity.db.insertMagnetData(recorderMagneticReadings);
-        activity.findViewById(R.id.client_start).setEnabled(true);
-        activity.findViewById(R.id.client_stop).setEnabled(false);
-        recorderMagneticReadings.clear(); // clear the array to free up memory
+        isReading = false;
+        String data = android.text.TextUtils.join(",",magneticReading);
+        Log.d(MainActivity.MAGNET_TAG,"Samples:"+ magneticReading.size() + ":" +data);
+        MainActivity.db.insertMagnetData(magneticReading);
+        magneticReading.clear(); // clear the array to free up memory
+        activity.findViewById(R.id.MF_start).setEnabled(true); // enable the start button for next reading
     }
 }

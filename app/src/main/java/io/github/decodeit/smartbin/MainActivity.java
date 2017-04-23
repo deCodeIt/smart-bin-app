@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String SOUND_TAG = "SOUND";
     public static final String MAGNET_TAG = "MAGNET";
     public static final String TAG = "SB";
-    public static final long SOUND_START_DELAY = 5000; // milliseconds
+
     private boolean processingWifi = false;
 
     public static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 0x12345;
@@ -265,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if(wifiService.hasConnection()){
                     play.setEnabled(false);
-                    long startTime = System.currentTimeMillis()+SOUND_START_DELAY;
+                    long startTime = System.currentTimeMillis()+sH.SOUND_START_DELAY;
                     String fileName = "sine_wave.wav";
                     wifiService.runMessageClient(fileName,startTime,sH.getDuration(fileName),false);
                     sH.setDelayedRecordingService(startTime,sH.getDuration(fileName));
@@ -279,25 +279,25 @@ public class MainActivity extends AppCompatActivity {
 
     private void magneticHandling(){
         final Button start = (Button) findViewById(R.id.MF_start);
-        final Button stop = (Button) findViewById(R.id.MF_stop);
+//        final Button stop = (Button) findViewById(R.id.MF_stop);
 
         start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 start.setEnabled(false);
-                stop.setEnabled(true);
+//                stop.setEnabled(true);
                 magnetService.start();
             }
         });
 
-        stop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                stop.setEnabled(false);
-                start.setEnabled(true);
-                magnetService.stop();
-            }
-        });
+//        stop.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                stop.setEnabled(false);
+//                start.setEnabled(true);
+//                magnetService.stop();
+//            }
+//        });
     }
 
 }
