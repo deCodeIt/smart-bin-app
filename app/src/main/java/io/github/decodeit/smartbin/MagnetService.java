@@ -68,6 +68,9 @@ public class MagnetService implements SensorEventListener {
                     else if (num==AVGNUM){
                         pastStrength=SUM/num;
                     }
+                    else if (num>MAXNUM){
+                        stopCollectingSamples();
+                    }
 
 
 
@@ -106,15 +109,25 @@ public class MagnetService implements SensorEventListener {
     }
 
     public void stop(){
-        isReading = false;
-        deRegister();
+
+
+
         // save/process the collected values
+
+
+
+        // data is the thing to be stored, overall magnetic field values collected over time
+    }
+    public void stopCollectingSamples(){
+        deRegister();
+
         ArrayList<Float> recorderMagneticReadings = magneticReading;
         magneticReading = new ArrayList<>();
         String data = android.text.TextUtils.join(",",recorderMagneticReadings);
         Log.d(MainActivity.MAGNET_TAG,"Samples:"+ recorderMagneticReadings.size() + ":" +data);
+        MainActivity.db.insertMagnetData(recorderMagneticReadings);
+        activity.findViewById(R.id.client_start).setEnabled(true);
+        activity.findViewById(R.id.client_stop).setEnabled(false);
         recorderMagneticReadings.clear(); // clear the array to free up memory
-
-        // data is the thing to be stored, overall magnetic field values collected over time
     }
 }

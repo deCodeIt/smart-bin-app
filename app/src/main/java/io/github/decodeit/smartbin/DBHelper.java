@@ -48,7 +48,7 @@ public class DBHelper extends SQLiteOpenHelper {
     // TODO your column names
 
     // magnet table columns
-    // TODO your column names
+    private static final String SIGNAL_MAGNET_COLUMN_NAME = "field strength"; // csv (comma separated values)
 
 
     public DBHelper(Activity activity){
@@ -66,6 +66,10 @@ public class DBHelper extends SQLiteOpenHelper {
         if (!f.exists()) {
             f.mkdirs();
         }
+        f = new File(getAppStorageDirectory(), MAGNET_TABLE_NAME);
+        if (!f.exists()) {
+            f.mkdirs();
+        }
     }
 
     public String getAppStorageDirectory() {
@@ -79,6 +83,10 @@ public class DBHelper extends SQLiteOpenHelper {
     public String getWifiStorageDir(){
         return getAppStorageDirectory() + File.separator + WIFI_TABLE_NAME;
     }
+    public String getMagnetStorageDir(){
+        return getAppStorageDirectory() + File.separator + MAGNET_TABLE_NAME;
+    }
+
 
     @Override
     public void onCreate(SQLiteDatabase db) {
@@ -87,12 +95,18 @@ public class DBHelper extends SQLiteOpenHelper {
                 "create table " + WIFI_TABLE_NAME  +
                         " (id integer primary key autoincrement, "+SIGNAL_WIFI_COLUMN_NAME+" text," + LABEL_WIFI_COLUMN_NAME + " text)"
         );
+        Log.d(DB_TAG,"IN OnCreate");
+        db.execSQL(
+                "create table " + MAGNET_TABLE_NAME  +
+                        " (id integer primary key autoincrement, "+SIGNAL_MAGNET_COLUMN_NAME+" text,)"
+        );
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.d(DB_TAG,"IN onUpgrade");
         db.execSQL("DROP TABLE IF EXISTS "+WIFI_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS "+MAGNET_TABLE_NAME);
         onCreate(db);
     }
 
@@ -137,6 +151,45 @@ public class DBHelper extends SQLiteOpenHelper {
 
     // TODO Insert function and query for Magnet Data @ Rehmat
 
+    public boolean insertMagnetData(ArrayList<Float> signal) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(SIGNAL_MAGNET_COLUMN_NAME,android.text.TextUtils.join(",",signal));
+        db.insert(MAGNET_TABLE_NAME,null,cv);
+        db.close();
+
+        // save to file
+        return saveMagnetDataToFile(signal);
+    }
+
+    private boolean saveMagnetDataToFile(ArrayList<Float> signal) {
+        // saves the magnet Reading by appending it to a file
+        boolean ok=false;
+
+        try {
+            String filename = "magnet_data.txt";
+            String FULL_FILE_PATH = MainActivity.db.getMagnetStorageDir() + File.separator + filename;
+            Log.d(MainActivity.MAGNET_TAG, FULL_FILE_PATH);
+            File path = new File(FULL_FILE_PATH);
+            FileOutputStream outFile = new FileOutputStream(path, true);
+            String data = android.text.TextUtils.join(",",signal);
+            for(int i=0; i<data.length(); ++i) {
+                outFile.write(data.charAt(i));
+            }
+            outFile.write('\n'); // a new line character
+            outFile.close();
+            ok=true;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            ok=false;
+        } catch (IOException e) {
+            ok=false;
+            e.printStackTrace();
+        }
+        return ok;
+    }
+
+
     public ArrayList<String> getWifiData(){
         ArrayList<String> signalData;
         SQLiteDatabase db = this.getReadableDatabase();
@@ -145,6 +198,19 @@ public class DBHelper extends SQLiteOpenHelper {
         signalData = new ArrayList<String>(res.getCount());
         while(!res.isAfterLast()){
             signalData.set(res.getPosition(),res.getString(res.getColumnIndex(SIGNAL_WIFI_COLUMN_NAME)) + "," + res.getString(res.getColumnIndex(LABEL_WIFI_COLUMN_NAME)) );
+            res.moveToNext();
+        }
+        return signalData;
+    }
+
+    public ArrayList<String> getMagnetData(){
+        ArrayList<String> signalData;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor res = db.rawQuery("SELECT * FROM "+MAGNET_TABLE_NAME,null);
+        res.moveToFirst();
+        signalData = new ArrayList<String>(res.getCount());
+        while(!res.isAfterLast()){
+            signalData.set(res.getPosition(),res.getString(res.getColumnIndex(SIGNAL_MAGNET_COLUMN_NAME)) + ","  );
             res.moveToNext();
         }
         return signalData;
