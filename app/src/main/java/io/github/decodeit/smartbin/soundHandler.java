@@ -66,6 +66,7 @@ public class soundHandler {
     private boolean isPlaying = false;
     private long test_count = 0;
     ProgressDialog progressDialog;
+    public static final long SOUND_START_DELAY = 5000; // milliseconds
     private static final int FILE_SELECT_CODE = 0;
     public ArrayList<String> mediaPaths = new ArrayList<String>();
 //    private SharedPreferences settings;
