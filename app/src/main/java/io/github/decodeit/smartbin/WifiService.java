@@ -48,7 +48,7 @@ public class WifiService {
 //    private static final String passkey = "getlost@123"; // Hotspot Password
     private boolean isCollectingSamples = false;
 //    private static final float SAMPLES_PER_SECOND = 2.0f;
-    private static final float MAX_SAMPLES = 10.0f; // samples to be collected
+    private static final float MAX_SAMPLES = 12.0f; // samples to be collected
     private float NUM_SAMPLES; // current number of samples collected
     private Thread t;
     private BroadcastReceiver isConnected;

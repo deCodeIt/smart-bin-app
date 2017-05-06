@@ -29,7 +29,7 @@ public class MagnetService implements SensorEventListener {
     private boolean isReading = false;
     private TextView tv; // magnetic field reading TextView
     ArrayList<Float> magneticReading;
-    private static final int MAX_NUM = 100; // # of samples to collect before stopping
+    private static final int MAX_NUM = 1000; // # of samples to collect before stopping
     private static final int SLIDING_WINDOW_SIZE = 10; // samples in sliding window to check for field change
     private static int num = 0;
     private boolean isReadingBaseMagneticFieldStrength = false; // set to true when reading base magnetic field for first time
