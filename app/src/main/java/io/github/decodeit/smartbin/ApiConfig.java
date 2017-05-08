@@ -20,6 +20,5 @@ public interface ApiConfig {
     @Multipart
     @POST("retrofit_example/upload_multiple_files.php")
     Call<ServerResponse> uploadMulFile(@Part MultipartBody.Part file1,
-                                       @Part MultipartBody.Part file2,
-                                       @Part MultipartBody.Part file3);
+                                       @Part MultipartBody.Part file2);
 }

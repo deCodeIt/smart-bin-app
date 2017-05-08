@@ -9,8 +9,8 @@ import com.google.gson.annotations.SerializedName;
 public class ServerResponse {
 
     // variable name should be same as in the json response from php
-    @SerializedName("success")
-    boolean success;
+    @SerializedName("status")
+    boolean status;
     @SerializedName("message")
     String message;
 
@@ -19,7 +19,7 @@ public class ServerResponse {
     }
 
     boolean getSuccess() {
-        return success;
+        return status;
     }
 
 

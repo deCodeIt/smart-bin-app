@@ -98,7 +98,8 @@ public class Wave
 
         try {
             if(filename==null){
-                filename = MainActivity.db.getSoundLabel();
+//                filename = MainActivity.db.getSoundLabel();
+                filename = "sound_data.wav";
             }
 //            String FULL_FILE_PATH = activity.getFilesDir()+File.separator+filename;
             String FULL_FILE_PATH = MainActivity.db.getSoundStorageDir() + File.separator + filename;

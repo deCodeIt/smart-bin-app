@@ -59,6 +59,22 @@ public class MainActivity extends AppCompatActivity {
         initializeWifi();
         soundHandling();
         magneticHandling();
+
+        Button upload = (Button) findViewById(R.id.btn_upload);
+        upload.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String filename1 = "sound_data.wav";
+                String FULL_FILE_PATH1 = MainActivity.db.getSoundStorageDir() + File.separator + filename1;
+                Log.d("File Path1", FULL_FILE_PATH1);
+                String filename2 = "wifi_data.txt";
+                String FULL_FILE_PATH2 = MainActivity.db.getWifiStorageDir() + File.separator + filename2;
+                Log.d("File Path2", FULL_FILE_PATH2);
+
+                sH.uploadMultipleFiles(FULL_FILE_PATH1,FULL_FILE_PATH2);
+                //sH.uploadFile(FULL_FILE_PATH2);
+            }
+        });
     }
 
     @Override

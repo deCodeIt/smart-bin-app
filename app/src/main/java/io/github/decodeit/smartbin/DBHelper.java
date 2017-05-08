@@ -134,7 +134,8 @@ public class DBHelper extends SQLiteOpenHelper {
             String FULL_FILE_PATH = MainActivity.db.getWifiStorageDir() + File.separator + filename;
             Log.d(MainActivity.WIFI_TAG, FULL_FILE_PATH);
             File path = new File(FULL_FILE_PATH);
-            FileOutputStream outFile = new FileOutputStream(path, true);
+//            FileOutputStream outFile = new FileOutputStream(path, true);
+            FileOutputStream outFile = new FileOutputStream(path);
             String data = android.text.TextUtils.join(",",signal) + "," + getLabel();
             for(int i=0; i<data.length(); ++i) {
                 outFile.write(data.charAt(i));

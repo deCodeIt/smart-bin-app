@@ -20,6 +20,7 @@ import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.io.File;
@@ -368,34 +369,30 @@ public class soundHandler {
     }
 
 
-    public void uploadMultipleFiles(String mediaPath1,String mediaPath2, String mediaPath3) {
+    public void uploadFile(String mediaPath) {
         progressDialog.show();
 
         // Map is used to multipart the file using okhttp3.RequestBody
-        File file1 = new File(mediaPath1);
-        File file2 = new File(mediaPath2);
-        File file3 = new File(mediaPath3);
+        //mediaPath = Environment.getExternalStorageDirectory() + File.separator + "SmartBin" + File.separator + "wifi_data" + File.separator + "wifi_data.txt";
+        //str1.setText(mediaPath);
+        File file = new File(mediaPath);
 
         // Parsing any Media type file
-        RequestBody requestBody1 = RequestBody.create(MediaType.parse("*/*"), file1);
-        RequestBody requestBody2 = RequestBody.create(MediaType.parse("*/*"), file2);
-        RequestBody requestBody3 = RequestBody.create(MediaType.parse("*/*"), file3);
-
-        MultipartBody.Part fileToUpload1 = MultipartBody.Part.createFormData("file1", file1.getName(), requestBody1);
-        MultipartBody.Part fileToUpload2 = MultipartBody.Part.createFormData("file2", file2.getName(), requestBody2);
-        MultipartBody.Part fileToUpload3 = MultipartBody.Part.createFormData("file3", file3.getName(), requestBody3);
+        RequestBody requestBody = RequestBody.create(MediaType.parse("*/*"), file);
+        MultipartBody.Part fileToUpload = MultipartBody.Part.createFormData("files", file.getName(), requestBody);
+        RequestBody filename = RequestBody.create(MediaType.parse("text/plain"), file.getName());
 
         ApiConfig getResponse = AppConfig.getRetrofit().create(ApiConfig.class);
-        Call<ServerResponse> call = getResponse.uploadMulFile(fileToUpload1, fileToUpload2,fileToUpload3);
+        Call<ServerResponse> call = getResponse.uploadFile(fileToUpload, filename);
         call.enqueue(new Callback<ServerResponse>() {
             @Override
             public void onResponse(Call<ServerResponse> call, Response<ServerResponse> response) {
                 ServerResponse serverResponse = response.body();
                 if (serverResponse != null) {
                     if (serverResponse.getSuccess()) {
-                        Toast.makeText(activity.getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(activity.getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_LONG).show();
                     } else {
-                        Toast.makeText(activity.getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(activity.getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 } else {
                     assert serverResponse != null;
@@ -407,6 +404,60 @@ public class soundHandler {
             @Override
             public void onFailure(Call<ServerResponse> call, Throwable t) {
 
+            }
+        });
+    }
+
+    public void uploadMultipleFiles(String mediaPath1,String mediaPath2) {
+        progressDialog.show();
+
+        // Map is used to multipart the file using okhttp3.RequestBody
+        File file1 = new File(mediaPath1);
+        File file2 = new File(mediaPath2);
+        //File file3 = new File(mediaPath3);
+
+        // Parsing any Media type file
+        RequestBody requestBody1 = RequestBody.create(MediaType.parse("*/*"), file1);
+        RequestBody requestBody2 = RequestBody.create(MediaType.parse("*/*"), file2);
+       //equestBody requestBody3 = RequestBody.create(MediaType.parse("*/*"), file3);
+
+        MultipartBody.Part fileToUpload1 = MultipartBody.Part.createFormData("file1", file1.getName(), requestBody1);
+        MultipartBody.Part fileToUpload2 = MultipartBody.Part.createFormData("file2", file2.getName(), requestBody2);
+        //MultipartBody.Part fileToUpload3 = MultipartBody.Part.createFormData("file3", file3.getName(), requestBody3);
+
+        ApiConfig getResponse = AppConfig.getRetrofit().create(ApiConfig.class);
+        Call<ServerResponse> call = getResponse.uploadMulFile(fileToUpload1, fileToUpload2);
+        call.enqueue(new Callback<ServerResponse>() {
+            @Override
+            public void onResponse(Call<ServerResponse> call, Response<ServerResponse> response) {
+                ServerResponse serverResponse = response.body();
+                if (serverResponse != null) {
+                    if (serverResponse.getSuccess()) {
+                        Log.d("FIle Upload", serverResponse.getMessage());
+                        Toast.makeText(activity.getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_LONG).show();
+                        String[] arr = serverResponse.getMessage().split(",");
+                        int pos1 = Integer.parseInt(arr[0])/10;
+                        int pos2 = Integer.parseInt(arr[1])/10;
+                        int pos3 = Integer.parseInt(arr[2])/10;
+                        ((Spinner)activity.findViewById(R.id.label_paper_clothes)).setSelection(pos1);
+                        ((Spinner)activity.findViewById(R.id.label_water)).setSelection(pos2);
+                        ((Spinner)activity.findViewById(R.id.label_metal)).setSelection(pos3);
+                        //((Spinner)activity.findViewById(R.id.label_paper_clothes)).setSelection(((Spinner)activity.findViewById(R.id.label_paper_clothes)).getPosition());
+                    } else {
+                        Log.d("FIle Upload", serverResponse.getMessage());
+                        Toast.makeText(activity.getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                } else {
+                    assert serverResponse != null;
+                    Log.v("Response", serverResponse.toString());
+                }
+                progressDialog.dismiss();
+            }
+
+            @Override
+            public void onFailure(Call<ServerResponse> call, Throwable t) {
+                    progressDialog.dismiss();
+                    Log.d("File Upload", "Failure");
             }
         });
     }
