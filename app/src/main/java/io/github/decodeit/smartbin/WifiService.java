@@ -40,12 +40,12 @@ public class WifiService {
     private Object syncToken;
     private int netId;
     private TextView signalStrengthTextView;
-//    private static final String bin_ssid = "i_am_smart_bin"; // Hotspot SSID
-    //private static final String passkey = "iloveindia"; // Hotspot Password
+    private static final String ssid = "i_am_smart_bin"; // Hotspot SSID
+    private static final String passkey = "iloveindia"; // Hotspot Password
 //    private static final String ssid = "$@UR@B#"; // Hotspot SSID
 //    private static final String passkey = "cuteassfuck"; // Hotspot Password
-    private static final String ssid = "LifeHacker"; // Hotspot SSID
-    private static final String passkey = "getlost@123"; // Hotspot Password
+//    private static final String ssid = "LifeHacker"; // Hotspot SSID
+//    private static final String passkey = "getlost@123"; // Hotspot Password
     private boolean isCollectingSamples = false;
 //    private static final float SAMPLES_PER_SECOND = 2.0f;
     private static final float MAX_SAMPLES = 12.0f; // samples to be collected

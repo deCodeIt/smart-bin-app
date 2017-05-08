@@ -438,10 +438,10 @@ public class soundHandler {
                         String[] arr = serverResponse.getMessage().split(",");
                         int pos1 = Integer.parseInt(arr[0])/10;
                         int pos2 = Integer.parseInt(arr[1])/10;
-                        int pos3 = Integer.parseInt(arr[2])/10;
+//                        int pos3 = Integer.parseInt(arr[2])/10;
                         ((Spinner)activity.findViewById(R.id.label_paper_clothes)).setSelection(pos1);
                         ((Spinner)activity.findViewById(R.id.label_water)).setSelection(pos2);
-                        ((Spinner)activity.findViewById(R.id.label_metal)).setSelection(pos3);
+//                        ((Spinner)activity.findViewById(R.id.label_metal)).setSelection(pos3);
                         //((Spinner)activity.findViewById(R.id.label_paper_clothes)).setSelection(((Spinner)activity.findViewById(R.id.label_paper_clothes)).getPosition());
                     } else {
                         Log.d("FIle Upload", serverResponse.getMessage());

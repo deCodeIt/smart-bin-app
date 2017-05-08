@@ -8,6 +8,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import org.w3c.dom.Text;
@@ -34,6 +35,8 @@ public class MagnetService implements SensorEventListener {
     private static int num = 0;
     private boolean isReadingBaseMagneticFieldStrength = false; // set to true when reading base magnetic field for first time
     private float BASE_STRENGTH = 0.0f; // magnetic field in empty bin
+    private float THRESHOLD = 5.0f; // currentStrength > BASE_STRENGTH + THRESHOLD
+    private boolean metalFound = false;
     private float currentStrength=0, pastStrength=0, difference, SUM=0, maxInSample, minInSample; // useless but saves memory and speeds up
 
     MagnetService( Activity activity){
@@ -70,6 +73,13 @@ public class MagnetService implements SensorEventListener {
 
                     // get current magnetic field
                     currentStrength = getMagneticFieldStrength();
+
+                    if(!metalFound && BASE_STRENGTH!=0 && currentStrength > THRESHOLD + BASE_STRENGTH){
+                        // metal found
+                        Log.d(MainActivity.MAGNET_TAG, "Metal Found");
+                        // Set metal found label to true
+                        ((Spinner)activity.findViewById(R.id.label_metal)).setSelection(1);
+                    }
                     // append it in array
                     magneticReading.add(currentStrength);
 
@@ -127,11 +137,13 @@ public class MagnetService implements SensorEventListener {
     public void start(){
         // start Reading
         // initial values
+        metalFound = false;
         SUM = 0;
         pastStrength = 0;
         num = 0;
         magneticReading = new ArrayList<>();
         isReading = true;
+        ((Spinner)activity.findViewById(R.id.label_metal)).setSelection(0);
 
         //start reading
         register();

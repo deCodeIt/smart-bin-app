@@ -77,7 +77,7 @@
                     android:id="@+id/label_metal"
                     android:layout_width="wrap_content"
                     android:layout_height="40dp"
-                    android:entries="@array/percentage"
+                    android:entries="@array/metal_found"
                     android:prompt="@string/label_prompt_metal"
                     android:background="@drawable/text_border"
                     android:layout_marginLeft="10dp"

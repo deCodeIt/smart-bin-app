@@ -222,8 +222,7 @@ public class DBHelper extends SQLiteOpenHelper {
     private String getLabel(){
         // gets the current label set in MainActivity by user for current recorded data
         String label = String.valueOf(((Spinner)activity.findViewById(R.id.label_paper_clothes)).getSelectedItem()) + "," +
-                String.valueOf(((Spinner)activity.findViewById(R.id.label_water)).getSelectedItem()) + "," +
-                String.valueOf(((Spinner)activity.findViewById(R.id.label_metal)).getSelectedItem());
+                String.valueOf(((Spinner)activity.findViewById(R.id.label_water)).getSelectedItem()) + ",0";
 
         return label;
 
@@ -233,8 +232,8 @@ public class DBHelper extends SQLiteOpenHelper {
         // gets the current label set in MainActivity by user for current recorded data
         dateObj = new Date();
         String label = "P-"+String.valueOf(((Spinner)activity.findViewById(R.id.label_paper_clothes)).getSelectedItem()) + "_W-" +
-                String.valueOf(((Spinner)activity.findViewById(R.id.label_water)).getSelectedItem()) + "_M-" +
-                String.valueOf(((Spinner)activity.findViewById(R.id.label_metal)).getSelectedItem())+ "_"+ df.format(dateObj) + ".wav";
+                String.valueOf(((Spinner)activity.findViewById(R.id.label_water)).getSelectedItem()) + "_M-0" +
+                "_"+ df.format(dateObj) + ".wav";
 
         return label;
     }
