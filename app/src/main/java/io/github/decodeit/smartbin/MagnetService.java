@@ -96,6 +96,7 @@ public class MagnetService implements SensorEventListener {
                         }
                     } else {
                         // applying sliding window technique
+                        updateTextField(currentStrength-BASE_STRENGTH);
                         if(num < MAX_NUM) {
                             if (num > SLIDING_WINDOW_SIZE) {
                                 // we have at least required number of reading to start/continue out sliding window
@@ -103,7 +104,7 @@ public class MagnetService implements SensorEventListener {
                                 maxInSample = Collections.max(magneticReading.subList(num - SLIDING_WINDOW_SIZE, num));
 
                                 difference = Math.abs(maxInSample - minInSample);
-                                updateTextField(difference);
+//                                updateTextField(difference);
                             } else {
                                 tv.setText("Reading...");
                             }
